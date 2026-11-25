@@ -241,8 +241,9 @@ export function ListadoDetailModal({
   };
 
   const frentes = data.frentes ?? [];
-  const frentesVisibles = frentes;
-  const isThreeColumns = frentesVisibles.length >= 3;
+  // En Almacén de Pieles solo hay 1 proceso por programa; si por datos previos hubiese más de 1, tomamos el principal
+  const frentesVisibles = frentes.length > 1 ? [frentes[0]] : frentes;
+  const isThreeColumns = false;
 
   return (
     <Modal
@@ -312,11 +313,11 @@ export function ListadoDetailModal({
           </div>
         )}
 
-        {/* ─── MATERIALES (DIRECTOS / INDIRECTOS) ────────────────────── */}
+        {/* ─── ESTADO OPERATIVO DEL PROGRAMA ────────────────────── */}
         <div className="space-y-2.5 pt-1">
           <div className="flex items-center justify-between border-b border-border/70 pb-2">
             <h4 className="text-xs font-bold text-text-primary uppercase tracking-wider">
-              Materiales ({frentesVisibles.length})
+              Estado del Programa
             </h4>
           </div>
 
