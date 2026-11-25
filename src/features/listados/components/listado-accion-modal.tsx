@@ -3,7 +3,6 @@ import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/moda
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Spinner } from '@/components/ui/spinner';
-import { TIPO_FRENTE_CONFIG } from '@/config/status-config';
 import type { ListadoItem, TipoFrenteMaterial } from '../types/listados.types';
 
 export type AccionOperativaAlmacen = 'separar' | 'entregar' | 'descontar';
@@ -12,7 +11,7 @@ export interface ListadoAccionModalProps {
   isOpen: boolean;
   onClose: () => void;
   listado: ListadoItem | null;
-  tipoFrente: TipoFrenteMaterial;
+  tipoFrente?: TipoFrenteMaterial;
   accion: AccionOperativaAlmacen;
   onConfirm: (opts: { entregarTambien?: boolean }) => Promise<void> | void;
   isSubmitting?: boolean;
@@ -47,7 +46,6 @@ export function ListadoAccionModal({
 
   const isSeparar = accion === 'separar';
   const isDescontar = accion === 'descontar';
-  const frenteConfig = TIPO_FRENTE_CONFIG[tipoFrente];
 
   const handleConfirm = () => {
     onConfirm({ entregarTambien: isSeparar ? entregarTambien : false });
@@ -82,11 +80,6 @@ export function ListadoAccionModal({
               <span className="font-mono font-black text-base text-text-primary tracking-wide">
                 {listado.numeroListado}
               </span>
-              <div className="flex items-center gap-1.5">
-                <span className="px-2 py-0.5 rounded-md text-xs font-bold bg-app-surface text-brand-primary border border-brand-primary/30 shadow-2xs">
-                  {frenteConfig.nombre}
-                </span>
-              </div>
             </div>
           </div>
 

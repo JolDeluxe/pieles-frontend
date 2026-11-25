@@ -379,7 +379,6 @@ export function ListadoDetailModal({
               )}
             >
               {frentesVisibles.map((frente) => {
-                const configTipo = TIPO_FRENTE_CONFIG[frente.tipoFrente];
                 const isOperating = operatingFrente === frente.tipoFrente;
                 const canUserOperateSeparar = canSeparar && canOperateListadoFrente(user, frente.tipoFrente, 'almacen');
                 const canUserOperateEntregar = canEntregar && canOperateListadoFrente(user, frente.tipoFrente, 'almacen');
@@ -402,7 +401,7 @@ export function ListadoDetailModal({
                     {/* Header del frente: Nombre y Badge de Estado */}
                     <div className="flex items-center justify-between gap-2 border-b border-border/50 pb-2">
                       <span className="font-extrabold text-xs sm:text-sm text-text-primary truncate">
-                        {configTipo?.nombre ?? frente.tipoFrente}
+                        {data.numeroListado} - {data.lineaProduccion?.nombre}
                       </span>
                       <FrenteStatusBadge
                         estado={frente.estado}

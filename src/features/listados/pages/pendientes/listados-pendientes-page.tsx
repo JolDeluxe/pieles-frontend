@@ -237,7 +237,7 @@ export function ListadosPendientesPage(): ReactNode {
       if (accion === 'separar') {
         const resSeparar = await listadosApi.separar(listado.id, tipoFrente);
         if (!resSeparar.success) {
-          showFeedback('error', resSeparar.message || 'Error al separar el material.');
+          showFeedback('error', resSeparar.message || 'Error al registrar entrega afectada.');
           return;
         }
 
@@ -246,18 +246,18 @@ export function ListadosPendientesPage(): ReactNode {
           if (!resEntregar.success) {
             showFeedback(
               'error',
-              `Se separaron los materiales, pero ocurrió un error al entregarlos: ${resEntregar.message || 'Error al entregar.'}`,
+              `Se registró entrega afectada, pero ocurrió un error al registrar regreso: ${resEntregar.message || 'Error al entregar.'}`,
             );
           } else {
             showFeedback(
               'success',
-              `${TIPO_FRENTE_CONFIG[tipoFrente]?.nombre ?? tipoFrente} de listado ${listado.numeroListado} separado y entregado a producción.`,
+              `Programa ${listado.numeroListado}: entrega afectada y regreso de material registrados.`,
             );
           }
         } else {
           showFeedback(
             'success',
-            `${TIPO_FRENTE_CONFIG[tipoFrente]?.nombre ?? tipoFrente} de listado ${listado.numeroListado} separado correctamente.`,
+            `Programa ${listado.numeroListado}: Entrega Afectada registrada (Palomita Roja).`,
           );
         }
       } else if (accion === 'entregar') {
@@ -265,17 +265,17 @@ export function ListadosPendientesPage(): ReactNode {
         if (res.success) {
           showFeedback(
             'success',
-            `${TIPO_FRENTE_CONFIG[tipoFrente]?.nombre ?? tipoFrente} de listado ${listado.numeroListado} entregado a producción.`,
+            `Programa ${listado.numeroListado}: Regreso de Material registrado (Palomita Verde).`,
           );
         } else {
-          showFeedback('error', res.message || 'Error al entregar.');
+          showFeedback('error', res.message || 'Error al registrar regreso de material.');
         }
       } else if (accion === 'descontar') {
         const res = await listadosApi.descontar(listado.id, tipoFrente);
         if (res.success) {
           showFeedback(
             'success',
-            `${TIPO_FRENTE_CONFIG[tipoFrente]?.nombre ?? tipoFrente} de listado ${listado.numeroListado} descontado en sistema.`,
+            `Programa ${listado.numeroListado} descontado en sistema exitosamente.`,
           );
         } else {
           showFeedback('error', res.message || 'Error al descontar en sistema.');

@@ -3,9 +3,6 @@ import { createPortal } from 'react-dom';
 import { Icon } from '@/components/ui/icon';
 import { Pagination } from '@/components/ui/pagination';
 import { Skeleton } from '@/components/ui/skeleton';
-import { usePermissions } from '@/shared/hooks/use-permissions';
-import { canOperateListadoFrente } from '../utils/classify-listados';
-import { TIPO_FRENTE_CONFIG } from '@/config/status-config';
 import type {
   ListadoItem,
   EstadoFrenteMaterial,
@@ -186,13 +183,11 @@ function IndicadorProgresoFrente({
 function MenuAccionesFila({
   row,
   acciones,
-  frentesPermitidos,
 }: {
   row: ListadoItem;
   acciones?: ListadoAccionesHandlers;
   frentesPermitidos?: TipoFrenteMaterial[] | null;
 }): ReactNode {
-  const { user } = usePermissions();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -261,25 +256,13 @@ function MenuAccionesFila({
     );
   }
 
-  const frentes = row.frentes ?? [];
-  const frentesPermitidosFiltrados = frentes.filter(
-    (f) => !frentesPermitidos || frentesPermitidos.length === 0 || frentesPermitidos.includes(f.tipoFrente),
-  );
-  const frentesPendientes = frentesPermitidosFiltrados.filter(
-    (f) => f.estado === 'PENDIENTE' && canOperateListadoFrente(user, f.tipoFrente, 'almacen'),
-  );
-  const frentesSeparados = frentesPermitidosFiltrados.filter(
-    (f) => f.estado === 'SEPARADO' && canOperateListadoFrente(user, f.tipoFrente, 'almacen'),
-  );
-  const frentesEntregados = frentesPermitidosFiltrados.filter(
-    (f) => f.estado === 'ENTREGADO' && canOperateListadoFrente(user, f.tipoFrente, 'auditoria'),
-  );
-  const frentesParaRetroceder = frentesPermitidosFiltrados.filter((f) => {
-    if (f.estado === 'SEPARADO' || f.estado === 'ENTREGADO') {
-      return canOperateListadoFrente(user, f.tipoFrente, 'almacen');
-    }
-    return false;
-  });
+  const estadoPrograma = row.estado === 'DESCONTADO' || row.frentes?.every(f => f.estado === 'DESCONTADO')
+    ? 'DESCONTADO'
+    : row.estado === 'ENTREGADO_A_PRODUCCION' || row.frentes?.some(f => f.estado === 'ENTREGADO')
+    ? 'ENTREGADO'
+    : row.estado === 'SEPARADO' || row.frentes?.some(f => f.estado === 'SEPARADO')
+    ? 'SEPARADO'
+    : 'PENDIENTE';
 
   return (
     <div className="relative inline-block text-left">
@@ -293,7 +276,7 @@ function MenuAccionesFila({
           setIsOpen(!isOpen);
         }}
         className="w-5 h-5 sm:w-6 sm:h-6 2xl:w-7 2xl:h-7 mx-auto flex items-center justify-center rounded-md text-text-secondary hover:text-text-primary hover:bg-cuadra-arena/60 transition-colors cursor-pointer"
-        title="Opciones de listado"
+        title="Opciones del programa"
       >
         <Icon name="more_vert" size="14px" />
       </button>
@@ -322,7 +305,7 @@ function MenuAccionesFila({
               <span>Ver detalles</span>
             </button>
 
-            {/* Editar listado: Disponible siempre que el usuario tenga permiso y no esté cancelado */}
+            {/* Editar programa: Disponible siempre que el usuario tenga permiso y no esté cancelado */}
             {acciones.canEditar &&
               acciones.onEditar &&
               row.estado !== 'CANCELADO' && (
@@ -335,84 +318,91 @@ function MenuAccionesFila({
                   className="w-full flex items-center gap-2.5 px-3 py-2 text-text-primary hover:bg-cuadra-arena/40 text-left transition-colors cursor-pointer"
                 >
                   <Icon name="edit" size="xs" className="text-text-muted" />
-                  <span>Editar listado</span>
+                  <span>Editar programa</span>
                 </button>
               )}
 
-            {/* Separar material */}
+            {/* Paso 1: Entrega Afectada (cuando está PENDIENTE) */}
             {acciones.canSeparar &&
-              acciones.onSepararFrente &&
-              frentesPendientes.map((frente) => (
+              (acciones.onSeparar || acciones.onSepararFrente) &&
+              estadoPrograma === 'PENDIENTE' && (
                 <button
-                  key={`separar-${frente.id}`}
                   type="button"
                   onClick={() => {
                     setIsOpen(false);
-                    acciones.onSepararFrente!(row, frente.tipoFrente);
+                    if (acciones.onSeparar) {
+                      acciones.onSeparar(row);
+                    } else if (acciones.onSepararFrente) {
+                      acciones.onSepararFrente(row, 'DIRECTOS');
+                    }
                   }}
-                  className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-amber-700 font-semibold hover:bg-amber-500/10 text-left transition-colors cursor-pointer text-[13px] rounded-md"
+                  className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-red-700 font-semibold hover:bg-red-500/10 text-left transition-colors cursor-pointer text-[13px] rounded-md"
                 >
-                  <Icon name="arrow_forward" size="sm" className="text-amber-600" />
-                  <span>Separar {TIPO_FRENTE_CONFIG[frente.tipoFrente].shortLabel}</span>
+                  <Icon name="check" size="sm" weight={800} className="text-red-600" />
+                  <span>Entrega Afectada</span>
                 </button>
-              ))}
+              )}
 
-            {/* Entregar material */}
+            {/* Paso 2: Regreso de Material (cuando está en SEPARADO / Entrega Afectada) */}
             {acciones.canEntregar &&
-              acciones.onEntregarFrente &&
-              frentesSeparados.map((frente) => (
+              (acciones.onEntregar || acciones.onEntregarFrente) &&
+              estadoPrograma === 'SEPARADO' && (
                 <button
-                  key={`entregar-${frente.id}`}
                   type="button"
                   onClick={() => {
                     setIsOpen(false);
-                    acciones.onEntregarFrente!(row, frente.tipoFrente);
+                    if (acciones.onEntregar) {
+                      acciones.onEntregar(row);
+                    } else if (acciones.onEntregarFrente) {
+                      acciones.onEntregarFrente(row, 'DIRECTOS');
+                    }
                   }}
                   className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-emerald-700 font-semibold hover:bg-emerald-500/10 text-left transition-colors cursor-pointer text-[13px] rounded-md"
                 >
-                  <Icon name="arrow_forward" size="sm" className="text-emerald-600" />
-                  <span>Entregar {TIPO_FRENTE_CONFIG[frente.tipoFrente].shortLabel}</span>
+                  <Icon name="check" size="sm" weight={800} className="text-emerald-600" />
+                  <span>Regreso de Material</span>
                 </button>
-              ))}
+              )}
 
-            {/* Descontar en Sistema */}
+            {/* Paso 3: Descontar de Sistema (cuando está en ENTREGADO / Regreso de Material) */}
             {acciones.canDescontar &&
               acciones.onDescontarFrente &&
-              frentesEntregados.map((frente) => (
+              estadoPrograma === 'ENTREGADO' && (
                 <button
-                  key={`descontar-${frente.id}`}
                   type="button"
                   onClick={() => {
                     setIsOpen(false);
-                    acciones.onDescontarFrente!(row, frente.tipoFrente);
+                    acciones.onDescontarFrente!(row, 'DIRECTOS');
                   }}
                   className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-purple-700 font-semibold hover:bg-purple-500/10 text-left transition-colors cursor-pointer text-[13px] rounded-md"
                 >
-                  <Icon name="done_all" size="sm" className="text-purple-600" />
-                  <span>Descontar {TIPO_FRENTE_CONFIG[frente.tipoFrente].shortLabel}</span>
+                  <Icon name="done_all" size="sm" weight={800} className="text-purple-600" />
+                  <span>Descontar en Sistema</span>
                 </button>
-              ))}
+              )}
 
-            {/* Retroceder frente (opción única que abre el modal para elegir frente) */}
+            {/* Retroceder estado del programa */}
             {acciones.canRetroceder &&
-              acciones.onRetrocederFrente &&
-              frentesParaRetroceder.length > 0 && (
+              (acciones.onRetroceder || acciones.onRetrocederFrente) &&
+              (estadoPrograma === 'SEPARADO' || estadoPrograma === 'ENTREGADO') && (
                 <button
                   type="button"
                   onClick={() => {
                     setIsOpen(false);
-                    // Si solo hay un frente retrocedible, se pasa por defecto; si hay varios, undefined para elegirlo en el modal
-                    const unicoFrente = frentesParaRetroceder.length === 1 ? frentesParaRetroceder[0]?.tipoFrente : undefined;
-                    acciones.onRetrocederFrente!(row, unicoFrente as TipoFrenteMaterial);
+                    if (acciones.onRetroceder) {
+                      acciones.onRetroceder(row);
+                    } else if (acciones.onRetrocederFrente) {
+                      acciones.onRetrocederFrente(row, 'DIRECTOS');
+                    }
                   }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 text-warning-text hover:bg-warning-subtle text-left transition-colors cursor-pointer border-t border-border/50"
                 >
                   <Icon name="undo" size="xs" />
-                  <span>Retroceder</span>
+                  <span>Retroceder estado</span>
                 </button>
               )}
 
-            {/* Cancelar listado */}
+            {/* Cancelar programa */}
             {acciones.canCancelar &&
               acciones.onCancelar &&
               row.estado !== 'CANCELADO' &&
@@ -426,7 +416,7 @@ function MenuAccionesFila({
                   className="w-full flex items-center gap-2.5 px-3 py-2 text-danger hover:bg-danger/10 text-left transition-colors cursor-pointer border-t border-border/50"
                 >
                   <Icon name="block" size="xs" />
-                  <span>Cancelar listado</span>
+                  <span>Cancelar programa</span>
                 </button>
               )}
           </div>,
@@ -448,115 +438,49 @@ function MenuAccionesFila({
  * Columnas ACCESORIOS:
  * LINEA / MAQ | LISTA | FECHA | DIR | IND | BOL | [Acciones]
  */
-function renderColGroup(frentesCount: number, withSelection: boolean, hideActions: boolean = false) {
+function renderColGroup(withSelection: boolean, hideActions: boolean = false) {
   if (hideActions) {
     if (!withSelection) {
-      if (frentesCount <= 1) {
-        return (
-          <colgroup>
-            <col className="w-[30%]" />
-            <col className="w-[44%]" />
-            <col className="w-[14%]" />
-            <col className="w-[12%]" />
-          </colgroup>
-        );
-      }
-      if (frentesCount === 2) {
-        return (
-          <colgroup>
-            <col className="w-[28%]" />
-            <col className="w-[38%]" />
-            <col className="w-[14%]" />
-            <col className="w-[10%]" />
-            <col className="w-[10%]" />
-          </colgroup>
-        );
-      }
       return (
         <colgroup>
-          <col className="w-[26%]" />
+          <col className="w-[30%]" />
           <col className="w-[34%]" />
-          <col className="w-[13%]" />
-          <col className="w-[9%]" />
-          <col className="w-[9%]" />
-          <col className="w-[9%]" />
+          <col className="w-[22%]" />
+          <col className="w-[14%]" />
         </colgroup>
       );
     }
+    return (
+      <colgroup>
+        <col className="w-[6%]" />
+        <col className="w-[28%]" />
+        <col className="w-[32%]" />
+        <col className="w-[20%]" />
+        <col className="w-[14%]" />
+      </colgroup>
+    );
   }
 
   if (!withSelection) {
-    if (frentesCount <= 1) {
-      return (
-        <colgroup>
-          <col className="w-[26%]" />
-          <col className="w-[36%]" />
-          <col className="w-[20%]" />
-          <col className="w-[12%]" />
-          <col className="w-[6%]" />
-        </colgroup>
-      );
-    }
-    if (frentesCount === 2) {
-      return (
-        <colgroup>
-          <col className="w-[22%]" />
-          <col className="w-[30%]" />
-          <col className="w-[20%]" />
-          <col className="w-[11%]" />
-          <col className="w-[11%]" />
-          <col className="w-[6%]" />
-        </colgroup>
-      );
-    }
     return (
       <colgroup>
+        <col className="w-[26%]" />
+        <col className="w-[32%]" />
         <col className="w-[20%]" />
-        <col className="w-[27%]" />
-        <col className="w-[18%]" />
-        <col className="w-[11%]" />
-        <col className="w-[11%]" />
-        <col className="w-[11%]" />
-        <col className="w-[6%]" />
+        <col className="w-[14%]" />
+        <col className="w-[8%]" />
       </colgroup>
     );
   }
 
-  if (frentesCount <= 1) {
-    return (
-      <colgroup>
-        <col className="w-[5%]" />
-        <col className="w-[24%]" />
-        <col className="w-[34%]" />
-        <col className="w-[19%]" />
-        <col className="w-[12%]" />
-        <col className="w-[6%]" />
-      </colgroup>
-    );
-  }
-  if (frentesCount === 2) {
-    return (
-      <colgroup>
-        <col className="w-[5%]" />
-        <col className="w-[20%]" />
-        <col className="w-[28%]" />
-        <col className="w-[19%]" />
-        <col className="w-[11%]" />
-        <col className="w-[11%]" />
-        <col className="w-[6%]" />
-      </colgroup>
-    );
-  }
   return (
     <colgroup>
-      <col className="w-[5%]" />
-      <col className="w-[18%]" />
-      <col className="w-[25%]" />
-      <col className="w-[17%]" />
-      <col className="w-[11%]" />
-      <col className="w-[11%]" />
-      <col className="w-[11%]" />
       <col className="w-[6%]" />
+      <col className="w-[24%]" />
+      <col className="w-[30%]" />
+      <col className="w-[18%]" />
+      <col className="w-[14%]" />
+      <col className="w-[8%]" />
     </colgroup>
   );
 }
@@ -570,10 +494,10 @@ export function ListadosPendientesParalelaTable({
   emptyMessage = 'Sin listados pendientes',
   highlightedListadoId,
   entregandoListadoId,
-  entregandoFrente,
+  entregandoFrente: _entregandoFrente,
   descontandoListadoId,
-  descontandoFrente,
-  frentesPermitidos,
+  descontandoFrente: _descontandoFrente,
+  frentesPermitidos: _frentesPermitidos,
   isBotaDisabled = false,
   isAccesoriosDisabled = false,
   allowSelection = false,
@@ -586,19 +510,6 @@ export function ListadosPendientesParalelaTable({
   headerRight,
   pagination,
 }: ListadosParalelaTableProps): ReactNode {
-  // Columnas operativas dinámicas según perfil del usuario
-  const botaFrentesVisibles = useMemo(() => {
-    const base: TipoFrenteMaterial[] = ['DIRECTOS', 'INDIRECTOS'];
-    if (!frentesPermitidos || frentesPermitidos.length === 0) return base;
-    return base.filter((f) => frentesPermitidos.includes(f));
-  }, [frentesPermitidos]);
-
-  const accesoriosFrentesVisibles = useMemo(() => {
-    const base: TipoFrenteMaterial[] = ['DIRECTOS', 'INDIRECTOS', 'BOLSAS'];
-    if (!frentesPermitidos || frentesPermitidos.length === 0) return base;
-    return base.filter((f) => frentesPermitidos.includes(f));
-  }, [frentesPermitidos]);
-
   // Ordenamiento independiente por Orden de Línea, Fecha Requerida y Número de Listado
   const sortedBota = useMemo(() => {
     return [...botaItems].sort((a, b) => {
@@ -771,7 +682,7 @@ export function ListadosPendientesParalelaTable({
               </div>
 
               <table className="w-full table-fixed border-collapse text-left bg-app-surface">
-                {renderColGroup(botaFrentesVisibles.length, allowSelection, hideActions)}
+                {renderColGroup(allowSelection, hideActions)}
                 <thead>
                   <tr className="border-b border-border bg-app-surface text-text-secondary text-xs sm:text-sm font-bold uppercase tracking-wider">
                     {allowSelection && (
@@ -780,15 +691,9 @@ export function ListadosPendientesParalelaTable({
                     <th className="py-2.5 sm:py-3 px-2 sm:px-2.5 whitespace-nowrap">LINEA / MAQ</th>
                     <th className="py-2.5 sm:py-3 px-2 sm:px-2.5 truncate">LISTA</th>
                     <th className="py-2.5 sm:py-3 px-2 sm:px-2.5 text-right whitespace-nowrap">FECHA</th>
-                    {botaFrentesVisibles.map((frenteKey) => (
-                      <th
-                        key={`th-bota-${frenteKey}`}
-                        className="py-2.5 sm:py-3 px-1 text-center whitespace-nowrap"
-                        title={TIPO_FRENTE_CONFIG[frenteKey].nombre}
-                      >
-                        {TIPO_FRENTE_CONFIG[frenteKey].shortLabel}
-                      </th>
-                    ))}
+                    <th className="py-2.5 sm:py-3 px-1 text-center whitespace-nowrap" title="Estado del Programa">
+                      ESTADO
+                    </th>
                     {!hideActions && <th className="py-2.5 sm:py-3 px-1 text-center"></th>}
                   </tr>
                 </thead>
@@ -808,11 +713,23 @@ export function ListadosPendientesParalelaTable({
                         : descontandoListadoId === bota.id;
                       const isSelected = allowSelection && selectedBotaIds.includes(bota.id);
 
+                      const estadoPrograma = isDescontando
+                        ? 'DESCONTADO'
+                        : isEntregando
+                        ? 'ENTREGADO'
+                        : bota.estado === 'DESCONTADO' || (frentes.length > 0 && frentes.every((f) => f.estado === 'DESCONTADO'))
+                        ? 'DESCONTADO'
+                        : bota.estado === 'ENTREGADO_A_PRODUCCION' || frentes.some((f) => f.estado === 'ENTREGADO')
+                        ? 'ENTREGADO'
+                        : bota.estado === 'SEPARADO' || frentes.some((f) => f.estado === 'SEPARADO')
+                        ? 'SEPARADO'
+                        : 'PENDIENTE';
+
                       return (
                         <Fragment key={`bota-row-fragment-${bota.id}`}>
                           {isNewGroup && (
                             <tr key={`bota-separator-${bota.id}`} className="bg-slate-100/70 border-y border-border/80 h-3 select-none pointer-events-none" aria-hidden="true">
-                              <td colSpan={(allowSelection ? 5 : 4) + botaFrentesVisibles.length} className="p-0"></td>
+                              <td colSpan={allowSelection ? 6 : 5} className="p-0"></td>
                             </tr>
                           )}
                           <tr
@@ -898,35 +815,23 @@ export function ListadosPendientesParalelaTable({
                               );
                             })()}
 
-                            {/* Frentes operativos visibles */}
-                            {botaFrentesVisibles.map((frenteKey) => {
-                              const f = frentes.find((item) => item.tipoFrente === frenteKey);
-                              const estadoVisual =
-                                isDescontando && descontandoFrente === frenteKey
-                                  ? 'DESCONTADO'
-                                  : isEntregando && entregandoFrente === frenteKey
-                                  ? 'ENTREGADO'
-                                  : f?.estado;
-                              return (
-                                <td
-                                  key={`td-bota-${bota.id}-${frenteKey}`}
-                                  className={`px-1 text-center whitespace-nowrap ${
-                                    isNewGroup ? 'pt-1.5 pb-1 sm:pt-2 sm:pb-1.5' : 'py-1 sm:py-1.5'
-                                  }`}
-                                >
-                                  <IndicadorProgresoFrente
-                                    estado={estadoVisual}
-                                    label={TIPO_FRENTE_CONFIG[frenteKey].nombre}
-                                    isCancelado={bota.estado === 'CANCELADO'}
-                                  />
-                                </td>
-                              );
-                            })}
+                            {/* Indicador único de Estado del Programa */}
+                            <td
+                              className={`px-1 text-center whitespace-nowrap ${
+                                isNewGroup ? 'pt-1.5 pb-1 sm:pt-2 sm:pb-1.5' : 'py-1 sm:py-1.5'
+                              }`}
+                            >
+                              <IndicadorProgresoFrente
+                                estado={estadoPrograma as EstadoFrenteMaterial}
+                                label={bota.numeroListado}
+                                isCancelado={bota.estado === 'CANCELADO'}
+                              />
+                            </td>
 
                             {/* Acciones */}
                             {!hideActions && (
                               <td className="px-1 text-center whitespace-nowrap py-1 sm:py-1.5">
-                                <MenuAccionesFila row={bota} acciones={acciones} frentesPermitidos={frentesPermitidos} />
+                                <MenuAccionesFila row={bota} acciones={acciones} />
                               </td>
                             )}
                           </tr>
@@ -935,10 +840,10 @@ export function ListadosPendientesParalelaTable({
                     })
                   ) : (
                     <tr>
-                      <td colSpan={(hideActions ? 3 : 4) + botaFrentesVisibles.length} className="py-10 text-center text-text-muted text-xs sm:text-sm">
+                      <td colSpan={hideActions ? 4 : 5} className="py-10 text-center text-text-muted text-xs sm:text-sm">
                         <div className="flex flex-col items-center justify-center gap-1.5">
                           <Icon name="inbox" size="sm" className="opacity-40" />
-                          <span>Sin listados de BOTA</span>
+                          <span>Sin programas de BOTA</span>
                         </div>
                       </td>
                     </tr>
@@ -961,7 +866,7 @@ export function ListadosPendientesParalelaTable({
               </div>
 
               <table className="w-full table-fixed border-collapse text-left bg-app-surface">
-                {renderColGroup(accesoriosFrentesVisibles.length, allowSelection, hideActions)}
+                {renderColGroup(allowSelection, hideActions)}
                 <thead>
                   <tr className="border-b border-border bg-app-surface text-text-secondary text-xs sm:text-sm font-bold uppercase tracking-wider">
                     {allowSelection && (
@@ -970,15 +875,9 @@ export function ListadosPendientesParalelaTable({
                     <th className="py-2.5 sm:py-3 px-2 sm:px-2.5 whitespace-nowrap">LINEA / MAQ</th>
                     <th className="py-2.5 sm:py-3 px-2 sm:px-2.5 truncate">LISTA</th>
                     <th className="py-2.5 sm:py-3 px-2 sm:px-2.5 text-right whitespace-nowrap">FECHA</th>
-                    {accesoriosFrentesVisibles.map((frenteKey) => (
-                      <th
-                        key={`th-acc-${frenteKey}`}
-                        className="py-2.5 sm:py-3 px-1 text-center whitespace-nowrap"
-                        title={TIPO_FRENTE_CONFIG[frenteKey].nombre}
-                      >
-                        {TIPO_FRENTE_CONFIG[frenteKey].shortLabel}
-                      </th>
-                    ))}
+                    <th className="py-2.5 sm:py-3 px-1 text-center whitespace-nowrap" title="Estado del Programa">
+                      ESTADO
+                    </th>
                     {!hideActions && <th className="py-2.5 sm:py-3 px-1 text-center"></th>}
                   </tr>
                 </thead>
@@ -998,11 +897,23 @@ export function ListadosPendientesParalelaTable({
                         : descontandoListadoId === acc.id;
                       const isSelected = allowSelection && selectedAccesoriosIds.includes(acc.id);
 
+                      const estadoPrograma = isDescontando
+                        ? 'DESCONTADO'
+                        : isEntregando
+                        ? 'ENTREGADO'
+                        : acc.estado === 'DESCONTADO' || (frentes.length > 0 && frentes.every((f) => f.estado === 'DESCONTADO'))
+                        ? 'DESCONTADO'
+                        : acc.estado === 'ENTREGADO_A_PRODUCCION' || frentes.some((f) => f.estado === 'ENTREGADO')
+                        ? 'ENTREGADO'
+                        : acc.estado === 'SEPARADO' || frentes.some((f) => f.estado === 'SEPARADO')
+                        ? 'SEPARADO'
+                        : 'PENDIENTE';
+
                       return (
                         <Fragment key={`acc-row-fragment-${acc.id}`}>
                           {isNewGroup && (
                             <tr key={`acc-separator-${acc.id}`} className="bg-slate-100/70 border-y border-border/80 h-3 select-none pointer-events-none" aria-hidden="true">
-                              <td colSpan={(allowSelection ? 5 : 4) + accesoriosFrentesVisibles.length} className="p-0"></td>
+                              <td colSpan={allowSelection ? 6 : 5} className="p-0"></td>
                             </tr>
                           )}
                           <tr
@@ -1088,35 +999,23 @@ export function ListadosPendientesParalelaTable({
                               );
                             })()}
 
-                            {/* Frentes operativos visibles */}
-                            {accesoriosFrentesVisibles.map((frenteKey) => {
-                              const f = frentes.find((item) => item.tipoFrente === frenteKey);
-                              const estadoVisual =
-                                isDescontando && descontandoFrente === frenteKey
-                                  ? 'DESCONTADO'
-                                  : isEntregando && entregandoFrente === frenteKey
-                                  ? 'ENTREGADO'
-                                  : f?.estado;
-                              return (
-                                <td
-                                  key={`td-acc-${acc.id}-${frenteKey}`}
-                                  className={`px-1 text-center whitespace-nowrap ${
-                                    isNewGroup ? 'pt-1.5 pb-1 sm:pt-2 sm:pb-1.5' : 'py-1 sm:py-1.5'
-                                  }`}
-                                >
-                                  <IndicadorProgresoFrente
-                                    estado={estadoVisual}
-                                    label={TIPO_FRENTE_CONFIG[frenteKey].nombre}
-                                    isCancelado={acc.estado === 'CANCELADO'}
-                                  />
-                                </td>
-                              );
-                            })}
+                            {/* Indicador único de Estado del Programa */}
+                            <td
+                              className={`px-1 text-center whitespace-nowrap ${
+                                isNewGroup ? 'pt-1.5 pb-1 sm:pt-2 sm:pb-1.5' : 'py-1 sm:py-1.5'
+                              }`}
+                            >
+                              <IndicadorProgresoFrente
+                                estado={estadoPrograma as EstadoFrenteMaterial}
+                                label={acc.numeroListado}
+                                isCancelado={acc.estado === 'CANCELADO'}
+                              />
+                            </td>
 
                             {/* Acciones */}
                             {!hideActions && (
                               <td className="px-1 text-center whitespace-nowrap py-1 sm:py-1.5">
-                               <MenuAccionesFila row={acc} acciones={acciones} frentesPermitidos={frentesPermitidos} />
+                               <MenuAccionesFila row={acc} acciones={acciones} />
                               </td>
                             )}
                           </tr>
@@ -1125,10 +1024,10 @@ export function ListadosPendientesParalelaTable({
                     })
                   ) : (
                     <tr>
-                      <td colSpan={(hideActions ? 3 : 4) + accesoriosFrentesVisibles.length} className="py-10 text-center text-text-muted text-xs sm:text-sm">
+                      <td colSpan={hideActions ? 4 : 5} className="py-10 text-center text-text-muted text-xs sm:text-sm">
                         <div className="flex flex-col items-center justify-center gap-1.5">
                           <Icon name="inbox" size="sm" className="opacity-40" />
-                          <span>Sin listados de ACCESORIOS</span>
+                          <span>Sin programas de ACCESORIOS</span>
                         </div>
                       </td>
                     </tr>
