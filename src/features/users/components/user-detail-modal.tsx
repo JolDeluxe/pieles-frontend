@@ -1,0 +1,460 @@
+import { useState, useEffect, type ReactNode } from 'react';
+import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
+import { Icon } from '@/components/ui/icon';
+import { Spinner } from '@/components/ui/spinner';
+import { usersApi } from '../api/users-api';
+import { UserStatusBadge, UserRoleBadge, UserSegmentacionBadge } from './user-status-badge';
+import type { UsuarioItem } from '../types/users.types';
+import { usePermissions } from '@/shared/hooks/use-permissions';
+
+export interface UserDetailModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  user: UsuarioItem | null;
+  onEdit?: (user: UsuarioItem) => void;
+  onResetPassword?: (user: UsuarioItem) => void;
+}
+
+export function UserDetailModal({
+  isOpen,
+  onClose,
+  user,
+  onEdit,
+  onResetPassword,
+}: UserDetailModalProps): ReactNode {
+  const { hasPermission } = usePermissions();
+  const canSeePassword = hasPermission('usuario:password:ver');
+  const canEdit = hasPermission('usuario:editar');
+
+  const [revealedPassword, setRevealedPassword] = useState<string | null>(null);
+  const [isRevealing, setIsRevealing] = useState<boolean>(false);
+  const [revealError, setRevealError] = useState<string | null>(null);
+  const [copied, setCopied] = useState<boolean>(false);
+  const [copiedUser, setCopiedUser] = useState<boolean>(false);
+  const [secondsLeft, setSecondsLeft] = useState<number>(0);
+
+  // Clear state when modal closes or user changes
+  useEffect(() => {
+    if (!isOpen) {
+      setRevealedPassword(null);
+      setIsRevealing(false);
+      setRevealError(null);
+      setCopied(false);
+      setCopiedUser(false);
+      setSecondsLeft(0);
+    }
+  }, [isOpen, user?.id]);
+
+  // Countdown timer for revealed password security auto-hide
+  useEffect(() => {
+    if (secondsLeft > 0) {
+      const timer = setTimeout(() => setSecondsLeft(secondsLeft - 1), 1000);
+      return () => clearTimeout(timer);
+    } else if (secondsLeft === 0 && revealedPassword) {
+      setRevealedPassword(null);
+    }
+  }, [secondsLeft, revealedPassword]);
+
+  if (!user) return null;
+
+  const handleRevealPassword = async () => {
+    if (revealedPassword) {
+      setRevealedPassword(null);
+      setSecondsLeft(0);
+      return;
+    }
+
+    setIsRevealing(true);
+    setRevealError(null);
+    try {
+      const response = await usersApi.getRevealedPassword(user.id);
+      const pass = response.data?.password || response.data?.passwordActual;
+      if (response.success && pass) {
+        setRevealedPassword(pass);
+        setSecondsLeft(30); // 30 seconds auto-hide for security
+      } else {
+        setRevealError(response.message || 'No fue posible revelar la contraseña.');
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al consultar contraseña revelable.';
+      setRevealError(msg);
+    } finally {
+      setIsRevealing(false);
+    }
+  };
+
+  const handleCopyPassword = () => {
+    if (!revealedPassword) return;
+    navigator.clipboard.writeText(revealedPassword);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleCopyUser = () => {
+    navigator.clipboard.writeText(user.usuario);
+    setCopiedUser(true);
+    setTimeout(() => setCopiedUser(false), 2000);
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} className="max-w-xl">
+      <ModalHeader title="Ficha Detallada del Usuario" onClose={onClose} />
+      <ModalBody className="space-y-6">
+        <p className="text-xs text-text-secondary -mt-2">
+          Consulta la información general, asignaciones y credenciales del usuario.
+        </p>
+        {/* User Header Card */}
+        <div className="flex items-center gap-4 pb-5 border-b border-border">
+          <div className="w-14 h-14 rounded-full bg-marca-primario/10 text-marca-primario flex items-center justify-center font-bold text-xl shrink-0 border border-marca-primario/20">
+            {user.nombre
+              .split(' ')
+              .map((n) => n[0])
+              .slice(0, 2)
+              .join('')
+              .toUpperCase()}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h3 className="font-semibold text-text-primary text-lg font-sans">
+                {user.nombre}
+              </h3>
+              <UserStatusBadge estado={user.estado} />
+            </div>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-sm text-text-secondary font-mono">{user.usuario}</span>
+              <button
+                type="button"
+                onClick={handleCopyUser}
+                className="text-text-muted hover:text-text-primary text-xs flex items-center gap-1 transition-colors ml-1"
+                title="Copiar usuario"
+              >
+                <Icon name={copiedUser ? 'check' : 'content_copy'} size="13px" />
+                <span>{copiedUser ? 'Copiado' : 'Copiar'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Datos Principales en Formato Clave - Valor */}
+        <div className="rounded-xl border border-border bg-app-surface overflow-hidden divide-y divide-border/60">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 gap-1 hover:bg-app-surface-muted/30 transition-colors">
+            <span className="text-xs uppercase tracking-wider font-semibold text-text-muted">
+              Departamento
+            </span>
+            <span className="text-sm font-medium text-text-primary">
+              {user.departamento?.nombre || 'General / Sin departamento'}
+            </span>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 gap-1 hover:bg-app-surface-muted/30 transition-colors">
+            <span className="text-xs uppercase tracking-wider font-semibold text-text-muted">
+              Rol
+            </span>
+            <div>
+              <UserRoleBadge rolCodigo={user.rol?.codigo} />
+            </div>
+          </div>
+        </div>
+
+        {/* Bloque Especial: Segmentación y Líneas Autorizadas */}
+        <div className="rounded-xl border border-border bg-app-surface p-4 space-y-4 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between pb-3 border-b border-border/60 gap-2">
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-text-primary">
+                Segmentación Listados
+              </h4>
+              <p className="text-[11px] text-text-muted mt-0.5">
+                Alcance de frentes y materiales de Listados asignados
+              </p>
+            </div>
+            <div>
+              <UserSegmentacionBadge
+                tipoSurtidoAlmacen={user.tipoSurtidoAlmacen}
+                tipoMaterialAuditor={user.tipoMaterialAuditor}
+                rolCodigo={user.rol?.codigo}
+              />
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-2.5">
+              <span className="text-xs font-semibold text-text-secondary flex items-center gap-1.5">
+                <Icon name="precision_manufacturing" size="xs" className="text-text-muted" />
+                Líneas de Producción Autorizadas
+              </span>
+              <span className="text-[11px] font-medium text-text-muted">
+                {user.rol?.codigo !== 'ALMACENISTA'
+                  ? 'No aplica'
+                  : !user.lineasAsignadas || user.lineasAsignadas.length === 0
+                  ? 'Acceso global (todas)'
+                  : `${user.lineasAsignadas.length} seleccionada(s)`}
+              </span>
+            </div>
+
+            {user.rol?.codigo !== 'ALMACENISTA' ? (
+              <p className="text-xs text-text-muted italic bg-app-surface-muted/40 p-2.5 rounded-lg border border-border/50">
+                Este rol tiene visibilidad según los permisos asignados.
+              </p>
+            ) : !user.lineasAsignadas || user.lineasAsignadas.length === 0 ? (
+              <div className="p-3 rounded-lg bg-app-surface-muted/40 border border-border text-xs text-text-secondary">
+                Acceso sin restricción a <strong>todas las líneas de producción</strong>.
+              </div>
+            ) : (
+              <div className="space-y-3 pt-1">
+                {(() => {
+                  const lineasBota = user.lineasAsignadas.filter((l) => l.area === 'BOTA' || (!l.area && ['BOTA', 'COMPL. BOTA', 'BOTA LAG', 'BOTA FAC', 'CAJA ESPECIAL'].includes(l.nombre)));
+                  const lineasAccesorios = user.lineasAsignadas.filter((l) => !lineasBota.some((b) => b.id === l.id));
+
+                  return (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {lineasBota.length > 0 && (
+                        <div className="p-3 rounded-lg bg-app-surface-muted/30 border border-border space-y-2">
+                          <div className="flex items-center justify-between pb-1.5 border-b border-border/50">
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-text-secondary">
+                              Área BOTA
+                            </span>
+                            <span className="text-[10px] font-mono text-text-muted">
+                              {lineasBota.length}
+                            </span>
+                          </div>
+                          <ul className="space-y-1">
+                            {lineasBota.map((l) => (
+                              <li
+                                key={l.id}
+                                className="text-xs font-medium text-text-primary py-0.5 px-1.5 rounded hover:bg-app-surface transition-colors"
+                              >
+                                {l.nombre}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {lineasAccesorios.length > 0 && (
+                        <div className="p-3 rounded-lg bg-app-surface-muted/30 border border-border space-y-2">
+                          <div className="flex items-center justify-between pb-1.5 border-b border-border/50">
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-text-secondary">
+                              Área ACCESORIOS
+                            </span>
+                            <span className="text-[10px] font-mono text-text-muted">
+                              {lineasAccesorios.length}
+                            </span>
+                          </div>
+                          <ul className="space-y-1">
+                            {lineasAccesorios.map((l) => (
+                              <li
+                                key={l.id}
+                                className="text-xs font-medium text-text-primary py-0.5 px-1.5 rounded hover:bg-app-surface transition-colors"
+                              >
+                                {l.nombre}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+          </div>
+
+          {/* Alcance Operativo de Vales */}
+          <div className="pt-3 border-t border-border/60 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-text-secondary flex items-center gap-1.5">
+                <Icon name="receipt_long" size="xs" className="text-text-muted" />
+                Alcance Operativo de Vales
+              </span>
+              <span className="text-[11px] font-medium text-text-muted">
+                {user.rol?.codigo === 'SUPER_ADMIN'
+                  ? 'Acceso global (todas las áreas)'
+                  : user.rol?.codigo === 'ADMIN'
+                  ? 'Acceso departamental'
+                  : user.rol?.codigo === 'AUDITOR'
+                  ? 'Auditoría y Descuento'
+                  : user.rol?.codigo === 'REGISTRADOR'
+                  ? 'Registro y Captura'
+                  : (user.areasVale?.length ?? 0) === 0 && (user.departamentosValeAsignados?.length ?? 0) === 0
+                  ? 'Sin alcance asignado'
+                  : `${user.areasVale?.length ?? 0} área(s) · ${user.departamentosValeAsignados?.length ?? 0} depto(s)`}
+              </span>
+            </div>
+
+            {user.rol?.codigo === 'SUPER_ADMIN' ? (
+              <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-text-secondary">
+                Acceso global sin restricciones a todas las áreas y departamentos de Vales de Materia Prima.
+              </div>
+            ) : user.rol?.codigo === 'ADMIN' ? (
+              <div className="p-2.5 rounded-lg bg-cuadra-miel/10 border border-cuadra-miel/25 text-xs text-text-secondary">
+                Acceso administrativo total para los vales del departamento <strong>{user.departamento?.nombre || 'asignado'}</strong>.
+              </div>
+            ) : user.rol?.codigo === 'AUDITOR' ? (
+              <div className="p-2.5 rounded-lg bg-purple-500/10 border border-purple-500/20 text-xs text-text-secondary">
+                Autorizado para auditar y validar el descuento contable de vales entregados de su departamento.
+              </div>
+            ) : user.rol?.codigo === 'REGISTRADOR' ? (
+              <div className="p-2.5 rounded-lg bg-teal-500/10 border border-teal-500/20 text-xs text-text-secondary">
+                Autorizado para la captura, edición y registro de nuevos vales para su departamento.
+              </div>
+            ) : user.rol?.codigo === 'ALMACENISTA' ? (
+              (user.areasVale?.length ?? 0) === 0 && (user.departamentosValeAsignados?.length ?? 0) === 0 ? (
+                <div className="p-2.5 rounded-lg bg-app-surface-muted/40 border border-border/60 text-xs text-text-muted italic">
+                  Sin áreas ni departamentos de Vales autorizados (política deny-by-default).
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {user.areasVale && user.areasVale.length > 0 && (
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[11px] font-bold uppercase text-text-muted mr-1">Áreas:</span>
+                      {user.areasVale.map((area) => (
+                        <span
+                          key={area}
+                          className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-marca-primario/10 text-marca-primario border border-marca-primario/25"
+                        >
+                          {area}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {user.departamentosValeAsignados && user.departamentosValeAsignados.length > 0 && (
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[11px] font-bold uppercase text-text-muted mr-1">Deptos.:</span>
+                      {user.departamentosValeAsignados.map((depto) => (
+                        <span
+                          key={depto.id}
+                          className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-cuadra-arena/50 text-text-primary border border-border/80"
+                        >
+                          {depto.nombre}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            ) : (
+              <div className="p-2.5 rounded-lg bg-app-surface-muted/40 border border-border/60 text-xs text-text-muted italic">
+                Visibilidad sujeta a los permisos base del rol y departamento organizacional.
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Credentials & Password Reveal Section */}
+        {canSeePassword && user.rol?.codigo !== 'SUPER_ADMIN' && (
+          <div className="p-3.5 rounded-lg border border-border bg-app-surface-muted/30 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Icon name="key" size="xs" className="text-text-secondary" />
+                <span className="text-2xs font-semibold uppercase tracking-wider text-text-muted">
+                  Contraseña Actual
+                </span>
+              </div>
+              {secondsLeft > 0 && (
+                <span className="text-2xs font-mono px-2 py-0.5 rounded bg-warning/10 text-warning border border-warning/20">
+                  Ocultando en {secondsLeft}s
+                </span>
+              )}
+            </div>
+
+            {revealedPassword ? (
+              <div className="flex items-center justify-between gap-3 p-3 bg-app-surface rounded-lg border border-border font-mono text-sm">
+                <span className="select-all font-semibold text-marca-primario">
+                  {revealedPassword}
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopyPassword}
+                    className="h-8 px-2.5 text-xs"
+                  >
+                    <Icon name={copied ? 'check' : 'content_copy'} size="xs" className="mr-1" />
+                    {copied ? 'Copiada' : 'Copiar'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setRevealedPassword(null);
+                      setSecondsLeft(0);
+                    }}
+                    className="h-8 px-2 text-xs"
+                    title="Ocultar"
+                  >
+                    <Icon name="visibility_off" size="xs" />
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-text-muted">
+                  La contraseña se mantiene cifrada. Puedes revelarla temporalmente con fines de soporte.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRevealPassword}
+                  disabled={isRevealing}
+                  className="h-8 px-3 text-xs whitespace-nowrap"
+                >
+                  {isRevealing ? (
+                    <Spinner size="xs" className="mr-1.5" />
+                  ) : (
+                    <Icon name="visibility" size="xs" className="mr-1.5" />
+                  )}
+                  {isRevealing ? 'Consultando...' : 'Revelar'}
+                </Button>
+              </div>
+            )}
+
+            {revealError && (
+              <p className="text-xs text-danger font-medium">{revealError}</p>
+            )}
+          </div>
+        )}
+
+      </ModalBody>
+
+      <ModalFooter className="flex items-center justify-between">
+        <Button type="button" variant="cancelar" onClick={onClose}>
+          Cerrar
+        </Button>
+
+        <div className="flex items-center gap-2">
+          {canEdit && onResetPassword && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                onClose();
+                onResetPassword(user);
+              }}
+            >
+              <Icon name="lock_reset" size="xs" className="mr-1.5" />
+              Restablecer Contraseña
+            </Button>
+          )}
+          {canEdit && onEdit && (
+            <Button
+              type="button"
+              variant="accion"
+              onClick={() => {
+                onClose();
+                onEdit(user);
+              }}
+            >
+              <Icon name="edit" size="xs" className="mr-1.5" />
+              Editar Usuario
+            </Button>
+          )}
+        </div>
+      </ModalFooter>
+    </Modal>
+  );
+}
