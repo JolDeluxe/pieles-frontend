@@ -67,11 +67,11 @@ export function ListadoAccionModal({
       />
       <div className="flex flex-col flex-1 overflow-hidden">
         <ModalBody className="space-y-4">
-          {/* Card de información del listado y frente */}
+          {/* Card de información del programa y frente */}
           <div className="p-3.5 rounded-xl bg-cuadra-arena/30 border border-border space-y-2">
             <div className="flex items-center justify-between gap-2">
               <span className="text-2xs uppercase tracking-wider text-text-muted font-bold">
-                Listado de Producción
+                Programa de Producción
               </span>
               <span className="inline-flex items-center gap-1 font-bold text-xs px-2 py-0.5 rounded-full bg-cuadra-arena text-text-primary border border-border/60">
                 <Icon name="tag" size="12px" />
@@ -93,47 +93,33 @@ export function ListadoAccionModal({
           {/* Pregunta explicativa */}
           {isSeparar ? (
             <div className="space-y-3">
-              <div className="flex items-start gap-2.5 p-3 rounded-lg bg-brand-primary/5 border border-brand-primary/20 text-xs text-text-primary">
-                <Icon name="inventory_2" size="sm" className="text-brand-primary shrink-0 mt-0.5" />
+              <div className="flex items-start gap-2.5 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-text-primary">
+                <Icon name="check" size="sm" weight={800} className="text-red-600 shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-semibold text-brand-primary">¿Marcar materiales como separados?</p>
+                  <p className="font-semibold text-red-700 dark:text-red-400">¿Registrar Entrega Afectada?</p>
                   <p className="text-text-secondary text-2xs mt-0.5">
-                    Se registrará que <strong>{frenteConfig.nombre}</strong> fueron apartados y surtidos en almacén.
+                    Se marcará la <strong>salida y entrega a producción</strong> (Palomita Roja) indicando que el material del programa ya fue entregado a producción.
                   </p>
                 </div>
               </div>
-
-              {/* Checkbox opcional de entrega inmediata a producción */}
-              <label className="flex items-center gap-2.5 p-2.5 rounded-lg border border-border bg-app-surface hover:bg-cuadra-arena/20 transition-colors cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={entregarTambien}
-                  onChange={(e) => setEntregarTambien(e.target.checked)}
-                  disabled={isSubmitting}
-                  className="rounded border-border text-brand-primary focus:ring-brand-primary h-4 w-4 shrink-0 cursor-pointer"
-                />
-                <span className="text-xs text-text-primary font-medium">
-                  Marcar también como entregados a producción
-                </span>
-              </label>
             </div>
           ) : isDescontar ? (
             <div className="flex items-start gap-2.5 p-3 rounded-lg bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800/40 text-xs text-text-primary">
-              <Icon name="done_all" size="sm" className="text-purple-600 shrink-0 mt-0.5" />
+              <Icon name="done_all" size="sm" weight={800} className="text-purple-600 shrink-0 mt-0.5" />
               <div>
-                <p className="font-semibold text-purple-900 dark:text-purple-300">¿Confirmar descuento en sistema?</p>
+                <p className="font-semibold text-purple-900 dark:text-purple-300">¿Marcar Descontado de Sistema?</p>
                 <p className="text-text-secondary text-2xs mt-0.5">
-                  Confirmas que los materiales de <strong>{frenteConfig.nombre}</strong> ya fueron descontados en el sistema.
+                  Confirmas que el programa ya fue descontado en el sistema (Dos palomitas moradas) y se retirará del tablero de pendientes.
                 </p>
               </div>
             </div>
           ) : (
             <div className="flex items-start gap-2.5 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 text-xs text-text-primary">
-              <Icon name="local_shipping" size="sm" className="text-emerald-600 shrink-0 mt-0.5" />
+              <Icon name="check" size="sm" weight={800} className="text-emerald-600 shrink-0 mt-0.5" />
               <div>
-                <p className="font-semibold text-emerald-800 dark:text-emerald-300">¿Confirmar entrega a producción?</p>
+                <p className="font-semibold text-emerald-800 dark:text-emerald-300">¿Registrar Regreso de Material?</p>
                 <p className="text-text-secondary text-2xs mt-0.5">
-                  Confirmas que <strong>{frenteConfig.nombre}</strong> ya se entregaron físicamente a piso de producción. Este es tu paso final de surtido.
+                  Confirmas que producción terminó de usar el material y almacén lo recibe (Palomita Verde).
                 </p>
               </div>
             </div>

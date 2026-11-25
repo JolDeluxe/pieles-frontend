@@ -40,6 +40,7 @@ export function LineaFormModal({
   const [permiteDirectos, setPermiteDirectos] = useState<boolean>(true);
   const [permiteIndirectos, setPermiteIndirectos] = useState<boolean>(true);
   const [permiteBolsas, setPermiteBolsas] = useState<boolean>(false);
+  const [diasTolerancia, setDiasTolerancia] = useState<number>(3);
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,6 +54,7 @@ export function LineaFormModal({
         setPermiteDirectos(linea.permiteDirectos ?? true);
         setPermiteIndirectos(linea.permiteIndirectos ?? true);
         setPermiteBolsas(linea.permiteBolsas ?? false);
+        setDiasTolerancia(linea.diasTolerancia ?? 3);
       } else {
         setNombre('');
         const defaultDepto = departamentos.find((d) => d.estado === 'ACTIVO') || departamentos[0];
@@ -61,6 +63,7 @@ export function LineaFormModal({
         setPermiteDirectos(true);
         setPermiteIndirectos(true);
         setPermiteBolsas(false);
+        setDiasTolerancia(3);
       }
       setError(null);
       setIsSubmitting(false);
@@ -100,6 +103,7 @@ export function LineaFormModal({
           permiteDirectos,
           permiteIndirectos,
           permiteBolsas,
+          diasTolerancia,
         };
         const res = await onUpdate(linea.id, updatePayload);
         if (res.success) {
@@ -124,6 +128,7 @@ export function LineaFormModal({
           permiteDirectos,
           permiteIndirectos,
           permiteBolsas,
+          diasTolerancia,
         };
         const res = await onCreate(createPayload);
         if (res.success) {
@@ -209,6 +214,27 @@ export function LineaFormModal({
               required
               className="uppercase tracking-wide"
             />
+          </div>
+
+          {/* Días de Tolerancia para Descuento en Sistema */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="diasTolerancia">Días de Tolerancia de Descuento</Label>
+              <span className="text-2xs text-text-muted">Semáforo de cumplimiento</span>
+            </div>
+            <Input
+              id="diasTolerancia"
+              type="number"
+              min={0}
+              max={30}
+              value={diasTolerancia}
+              onChange={(e) => setDiasTolerancia(Math.max(0, parseInt(e.target.value, 10) || 0))}
+              disabled={isSubmitting}
+              required
+            />
+            <p className="text-2xs text-text-muted">
+              Días posteriores a la fecha requerida antes de alertar en rojo si el programa no ha sido descontado.
+            </p>
           </div>
 
           {/* Selección de Materiales */}

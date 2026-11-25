@@ -48,11 +48,11 @@ interface ListadosAuditoriaParalelaTableProps {
 }
 
 /**
- * Renderiza el progreso acumulado de cada frente de surtido:
- * - PENDIENTE  → ⋯ (Materiales Pendientes)
- * - SEPARADO   → 🟡 (Separado en Almacén)
- * - ENTREGADO  → 🟡 ✔️ (Separado + Entregado a Producción)
- * - DESCONTADO → 🟡 ✔️ ☑️ (Separado + Entregado + Descontado en Sistema)
+ * Renderiza el progreso de cada programa / frente:
+ * - PENDIENTE  → ⋯ (Pendiente)
+ * - SEPARADO   → ✔️ Roja (Entrega Afectada)
+ * - ENTREGADO  → ✔️ Roja + ✔️ Verde (Entrega Afectada + Regreso de Material)
+ * - DESCONTADO → ✔️ Roja + ✔️ Verde + 2 palomitas moradas (Descontado en Sistema)
  * - Sin frente → —
  */
 function IndicadorProgresoFrente({
@@ -64,7 +64,7 @@ function IndicadorProgresoFrente({
 }): ReactNode {
   if (!estado) {
     return (
-      <span className="text-text-muted/30 text-xs select-none font-bold" title="No aplica para este listado">
+      <span className="text-text-muted/30 text-xs select-none font-bold" title="No aplica para este programa">
         —
       </span>
     );
@@ -74,11 +74,11 @@ function IndicadorProgresoFrente({
     return (
       <span
         className="inline-flex items-center justify-center gap-1 select-none"
-        title={`${label ? `${label}: ` : ''}Separado + Entregado + Descontado en Sistema`}
+        title={`${label ? `${label}: ` : ''}Entrega Afectada + Regreso de Material + Descontado de Sistema`}
       >
-        <Icon name="circle" fill size="11px" className="text-amber-500 shrink-0" />
-        <Icon name="check" size="13px" weight={700} className="text-emerald-600 shrink-0" />
-        <Icon name="done_all" size="14px" weight={700} className="text-purple-600 shrink-0" />
+        <Icon name="check" size="14px" weight={800} className="text-red-600 shrink-0" />
+        <Icon name="check" size="14px" weight={800} className="text-emerald-600 shrink-0" />
+        <Icon name="done_all" size="15px" weight={800} className="text-purple-600 shrink-0" />
       </span>
     );
   }
@@ -87,10 +87,10 @@ function IndicadorProgresoFrente({
     return (
       <span
         className="inline-flex items-center justify-center gap-1 select-none"
-        title={`${label ? `${label}: ` : ''}Separado en Almacén + Entregado a Producción`}
+        title={`${label ? `${label}: ` : ''}Entrega Afectada + Regreso de Material`}
       >
-        <Icon name="circle" fill size="11px" className="text-amber-500 shrink-0" />
-        <Icon name="check" size="13px" weight={700} className="text-emerald-600 shrink-0" />
+        <Icon name="check" size="14px" weight={800} className="text-red-600 shrink-0" />
+        <Icon name="check" size="14px" weight={800} className="text-emerald-600 shrink-0" />
       </span>
     );
   }
@@ -99,9 +99,9 @@ function IndicadorProgresoFrente({
     return (
       <span
         className="inline-flex items-center justify-center select-none"
-        title={`${label ? `${label}: ` : ''}Separado en Almacén`}
+        title={`${label ? `${label}: ` : ''}Entrega Afectada`}
       >
-        <Icon name="circle" fill size="12px" className="text-amber-500 shrink-0" />
+        <Icon name="check" size="14px" weight={800} className="text-red-600 shrink-0" />
       </span>
     );
   }
@@ -109,7 +109,7 @@ function IndicadorProgresoFrente({
   return (
     <span
       className="inline-flex items-center justify-center text-text-muted/70 select-none"
-      title={`${label ? `${label}: ` : ''}Materiales Pendientes`}
+      title={`${label ? `${label}: ` : ''}Pendiente`}
     >
       <Icon name="more_horiz" size="16px" />
     </span>
@@ -471,19 +471,19 @@ export function ListadosAuditoriaParalelaTable({
         <div className="flex items-center gap-3 sm:gap-5 flex-wrap">
           <span className="flex items-center gap-1 font-medium">
             <Icon name="more_horiz" size="14px" className="text-text-muted/70 shrink-0" />
-            <span className="text-text-secondary">Materiales Pendientes</span>
+            <span className="text-text-secondary">Pendiente</span>
           </span>
           <span className="flex items-center gap-1 font-medium">
-            <Icon name="circle" fill size="10px" className="text-amber-500 shrink-0" />
-            <span className="text-text-secondary">Separado en Almacén</span>
+            <Icon name="check" size="14px" weight={800} className="text-red-600 shrink-0" />
+            <span className="text-text-secondary">Entrega Afectada</span>
           </span>
           <span className="flex items-center gap-1 font-medium">
-            <Icon name="check" size="12px" weight={700} className="text-emerald-600 shrink-0" />
-            <span className="text-text-secondary">Entregado a Producción</span>
+            <Icon name="check" size="14px" weight={800} className="text-emerald-600 shrink-0" />
+            <span className="text-text-secondary">Regreso de Material</span>
           </span>
           <span className="flex items-center gap-1 font-medium">
-            <Icon name="done_all" size="13px" weight={700} className="text-purple-600 shrink-0" />
-            <span className="text-text-secondary">Descontado en Sistema</span>
+            <Icon name="done_all" size="15px" weight={800} className="text-purple-600 shrink-0" />
+            <span className="text-text-secondary">Descontado de Sistema</span>
           </span>
         </div>
       </div>

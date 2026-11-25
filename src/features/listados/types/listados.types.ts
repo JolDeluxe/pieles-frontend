@@ -33,6 +33,7 @@ export interface LineaProduccionSimple {
   nombre: string;
   area?: AreaProduccion;
   orden?: number;
+  diasTolerancia?: number;
   estado?: string;
 }
 

@@ -67,13 +67,44 @@ interface ListadosParalelaTableProps {
 }
 
 /**
- * Renderiza el progreso acumulado de cada frente de surtido:
- * - PENDIENTE  → ⋯ (Materiales Pendientes)
- * - SEPARADO   → 🟡 (Separado en Almacén)
- * - ENTREGADO  → 🟡 ✔️ (Separado + Entregado a Producción)
- * - DESCONTADO → 🟡 ✔️ ☑️ (Separado + Entregado + Descontado en Sistema)
+ * Renderiza el progreso de cada programa / frente:
+ * - PENDIENTE  → ⋯ (Pendiente)
+ * - SEPARADO   → ✔️ Roja (Entrega Afectada)
+ * - ENTREGADO  → ✔️ Roja + ✔️ Verde (Entrega Afectada + Regreso de Material)
+ * - DESCONTADO → ✔️ Roja + ✔️ Verde + 2 palomitas moradas (Descontado en Sistema)
  * - Sin frente → —
  */
+/**
+ * Calcula el estado del semáforo para un listado/programa en pendientes:
+ * - 'ROJO': Fecha actual >= fechaRequerida + diasTolerancia (ej. 3 días) y no descontado.
+ * - 'AMARILLO': Fecha actual == (fechaRequerida + diasTolerancia - 1 día) (1 día antes del límite).
+ * - 'VERDE': A tiempo / dentro del plazo seguro.
+ */
+function calcularSemaforo(fechaRequeridaStr: string, diasTolerancia: number = 3): 'ROJO' | 'AMARILLO' | 'VERDE' {
+  if (!fechaRequeridaStr) return 'VERDE';
+  const solo = fechaRequeridaStr.includes('T') ? fechaRequeridaStr.slice(0, 10) : fechaRequeridaStr;
+  const [y, m, d] = solo.split('-').map(Number);
+  if (!y || !m || !d) return 'VERDE';
+
+  const fechaReq = new Date(y, m - 1, d);
+  fechaReq.setHours(0, 0, 0, 0);
+
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+
+  // Diferencia en días transcurridos desde la fecha requerida
+  const diffTiempo = hoy.getTime() - fechaReq.getTime();
+  const diasTranscurridos = Math.floor(diffTiempo / (1000 * 60 * 60 * 24));
+
+  if (diasTranscurridos >= diasTolerancia) {
+    return 'ROJO';
+  }
+  if (diasTranscurridos === diasTolerancia - 1) {
+    return 'AMARILLO';
+  }
+  return 'VERDE';
+}
+
 function IndicadorProgresoFrente({
   estado,
   label,
@@ -96,7 +127,7 @@ function IndicadorProgresoFrente({
 
   if (!estado) {
     return (
-      <span className="text-text-muted/30 text-xs select-none font-bold" title="No aplica para este listado">
+      <span className="text-text-muted/30 text-xs select-none font-bold" title="No aplica para este programa">
         —
       </span>
     );
@@ -106,11 +137,11 @@ function IndicadorProgresoFrente({
     return (
       <span
         className="inline-flex items-center justify-center gap-1.5 select-none"
-        title={`${label ? `${label}: ` : ''}Separado + Entregado + Descontado en Sistema`}
+        title={`${label ? `${label}: ` : ''}Entrega Afectada + Regreso de Material + Descontado de Sistema`}
       >
-        <Icon name="circle" fill size="13px" className="text-amber-500 shrink-0" />
-        <Icon name="check" size="15px" weight={700} className="text-emerald-600 shrink-0" />
-        <Icon name="done_all" size="17px" weight={700} className="text-purple-600 shrink-0" />
+        <Icon name="check" size="16px" weight={800} className="text-red-600 shrink-0" />
+        <Icon name="check" size="16px" weight={800} className="text-emerald-600 shrink-0" />
+        <Icon name="done_all" size="18px" weight={800} className="text-purple-600 shrink-0" />
       </span>
     );
   }
@@ -119,10 +150,10 @@ function IndicadorProgresoFrente({
     return (
       <span
         className="inline-flex items-center justify-center gap-1.5 select-none"
-        title={`${label ? `${label}: ` : ''}Separado en Almacén + Entregado a Producción`}
+        title={`${label ? `${label}: ` : ''}Entrega Afectada + Regreso de Material`}
       >
-        <Icon name="circle" fill size="13px" className="text-amber-500 shrink-0" />
-        <Icon name="check" size="15px" weight={700} className="text-emerald-600 shrink-0" />
+        <Icon name="check" size="16px" weight={800} className="text-red-600 shrink-0" />
+        <Icon name="check" size="16px" weight={800} className="text-emerald-600 shrink-0" />
       </span>
     );
   }
@@ -131,9 +162,9 @@ function IndicadorProgresoFrente({
     return (
       <span
         className="inline-flex items-center justify-center select-none"
-        title={`${label ? `${label}: ` : ''}Separado en Almacén`}
+        title={`${label ? `${label}: ` : ''}Entrega Afectada`}
       >
-        <Icon name="circle" fill size="14px" className="text-amber-500 shrink-0" />
+        <Icon name="check" size="16px" weight={800} className="text-red-600 shrink-0" />
       </span>
     );
   }
@@ -142,7 +173,7 @@ function IndicadorProgresoFrente({
   return (
     <span
       className="inline-flex items-center justify-center select-none"
-      title={`${label ? `${label}: ` : ''}Materiales Pendientes`}
+      title={`${label ? `${label}: ` : ''}Pendiente`}
     >
       <Icon name="more_horiz" size="18px" className="text-text-muted/70 shrink-0" />
     </span>
@@ -704,19 +735,19 @@ export function ListadosPendientesParalelaTable({
         <div className="flex items-center gap-3 sm:gap-5 flex-wrap">
           <span className="flex items-center gap-1.5 font-medium">
             <Icon name="more_horiz" size="18px" className="text-text-muted/70 shrink-0" />
-            <span className="text-text-secondary font-semibold">Materiales Pendientes</span>
+            <span className="text-text-secondary font-semibold">Pendiente</span>
           </span>
           <span className="flex items-center gap-1.5 font-medium">
-            <Icon name="circle" fill size="13px" className="text-amber-500 shrink-0" />
-            <span className="text-text-secondary font-semibold">Separado en Almacén</span>
+            <Icon name="check" size="16px" weight={800} className="text-red-600 shrink-0" />
+            <span className="text-text-secondary font-semibold">Entrega Afectada</span>
           </span>
           <span className="flex items-center gap-1.5 font-medium">
-            <Icon name="check" size="15px" weight={700} className="text-emerald-600 shrink-0" />
-            <span className="text-text-secondary font-semibold">Entregado a Producción</span>
+            <Icon name="check" size="16px" weight={800} className="text-emerald-600 shrink-0" />
+            <span className="text-text-secondary font-semibold">Regreso de Material</span>
           </span>
           <span className="flex items-center gap-1.5 font-medium">
-            <Icon name="done_all" size="17px" weight={700} className="text-purple-600 shrink-0" />
-            <span className="text-text-secondary font-semibold">Descontado en Sistema</span>
+            <Icon name="done_all" size="18px" weight={800} className="text-purple-600 shrink-0" />
+            <span className="text-text-secondary font-semibold">Descontado de Sistema</span>
           </span>
         </div>
         {headerRight && <div className="flex items-center gap-2 shrink-0">{headerRight}</div>}
@@ -830,12 +861,42 @@ export function ListadosPendientesParalelaTable({
                               {bota.numeroListado}
                             </td>
 
-                            {/* FECHA a la derecha */}
-                            <td className={`px-2 sm:px-2.5 text-right whitespace-nowrap text-text-secondary text-[11px] sm:text-xs md:text-[13px] font-medium ${
-                              isNewGroup ? 'pt-1.5 pb-1 sm:pt-2 sm:pb-1.5' : 'py-1 sm:py-1.5'
-                            }`}>
-                              {formatFecha(bota.fechaRequerida)}
-                            </td>
+                            {/* FECHA a la derecha con semáforo */}
+                            {(() => {
+                              const semaforo = calcularSemaforo(bota.fechaRequerida, bota.lineaProduccion.diasTolerancia ?? 3);
+                              return (
+                                <td
+                                  className={`px-2 sm:px-2.5 text-right whitespace-nowrap text-[11px] sm:text-xs md:text-[13px] font-bold ${
+                                    isNewGroup ? 'pt-1.5 pb-1 sm:pt-2 sm:pb-1.5' : 'py-1 sm:py-1.5'
+                                  }`}
+                                >
+                                  <span
+                                    className={`inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded-sm ${
+                                      semaforo === 'ROJO'
+                                        ? 'bg-red-500/15 text-red-600 dark:text-red-400 font-extrabold'
+                                        : semaforo === 'AMARILLO'
+                                        ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 font-extrabold'
+                                        : 'text-text-secondary font-medium'
+                                    }`}
+                                    title={
+                                      semaforo === 'ROJO'
+                                        ? `Excedido de tolerancia (${bota.lineaProduccion.diasTolerancia ?? 3} días sin descontar)`
+                                        : semaforo === 'AMARILLO'
+                                        ? `Próximo al límite (1 día restante de tolerancia)`
+                                        : 'Dentro de fecha de tolerancia'
+                                    }
+                                  >
+                                    {semaforo === 'ROJO' && (
+                                      <span className="w-2 h-2 rounded-full bg-red-600 shrink-0 shadow-xs animate-pulse" />
+                                    )}
+                                    {semaforo === 'AMARILLO' && (
+                                      <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0 shadow-xs" />
+                                    )}
+                                    {formatFecha(bota.fechaRequerida)}
+                                  </span>
+                                </td>
+                              );
+                            })()}
 
                             {/* Frentes operativos visibles */}
                             {botaFrentesVisibles.map((frenteKey) => {
@@ -990,12 +1051,42 @@ export function ListadosPendientesParalelaTable({
                               {acc.numeroListado}
                             </td>
 
-                            {/* FECHA a la derecha */}
-                            <td className={`px-2 sm:px-2.5 text-right whitespace-nowrap text-text-secondary text-[11px] sm:text-xs md:text-[13px] font-medium ${
-                              isNewGroup ? 'pt-1.5 pb-1 sm:pt-2 sm:pb-1.5' : 'py-1 sm:py-1.5'
-                            }`}>
-                              {formatFecha(acc.fechaRequerida)}
-                            </td>
+                            {/* FECHA a la derecha con semáforo */}
+                            {(() => {
+                              const semaforo = calcularSemaforo(acc.fechaRequerida, acc.lineaProduccion.diasTolerancia ?? 3);
+                              return (
+                                <td
+                                  className={`px-2 sm:px-2.5 text-right whitespace-nowrap text-[11px] sm:text-xs md:text-[13px] font-bold ${
+                                    isNewGroup ? 'pt-1.5 pb-1 sm:pt-2 sm:pb-1.5' : 'py-1 sm:py-1.5'
+                                  }`}
+                                >
+                                  <span
+                                    className={`inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded-sm ${
+                                      semaforo === 'ROJO'
+                                        ? 'bg-red-500/15 text-red-600 dark:text-red-400 font-extrabold'
+                                        : semaforo === 'AMARILLO'
+                                        ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 font-extrabold'
+                                        : 'text-text-secondary font-medium'
+                                    }`}
+                                    title={
+                                      semaforo === 'ROJO'
+                                        ? `Excedido de tolerancia (${acc.lineaProduccion.diasTolerancia ?? 3} días sin descontar)`
+                                        : semaforo === 'AMARILLO'
+                                        ? `Próximo al límite (1 día restante de tolerancia)`
+                                        : 'Dentro de fecha de tolerancia'
+                                    }
+                                  >
+                                    {semaforo === 'ROJO' && (
+                                      <span className="w-2 h-2 rounded-full bg-red-600 shrink-0 shadow-xs animate-pulse" />
+                                    )}
+                                    {semaforo === 'AMARILLO' && (
+                                      <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0 shadow-xs" />
+                                    )}
+                                    {formatFecha(acc.fechaRequerida)}
+                                  </span>
+                                </td>
+                              );
+                            })()}
 
                             {/* Frentes operativos visibles */}
                             {accesoriosFrentesVisibles.map((frenteKey) => {

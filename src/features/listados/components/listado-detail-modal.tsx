@@ -51,9 +51,9 @@ function isTimestampHistorico(isoStr?: string | null): boolean {
 
 const SHORT_FRENTE_STATUS_LABELS: Record<string, string> = {
   PENDIENTE: 'Pendiente',
-  SEPARADO: 'Separado',
-  ENTREGADO: 'Entregado',
-  DESCONTADO: 'Descontado',
+  SEPARADO: 'Entrega Afectada',
+  ENTREGADO: 'Regreso de Material',
+  DESCONTADO: 'Descontado de Sistema',
 };
 
 function formatTimestampParts(isoStr?: string | null): { fecha: string; hora: string | null } | null {
@@ -250,9 +250,9 @@ export function ListadoDetailModal({
       onClose={onClose}
       className={isThreeColumns ? 'max-w-2xl md:max-w-4xl xl:max-w-5xl' : 'max-w-2xl sm:max-w-3xl'}
     >
-      <ModalHeader title="Detalle del Listado" onClose={onClose} />
+      <ModalHeader title="Detalle del Programa" onClose={onClose} />
       <ModalBody className="space-y-4 p-5 sm:p-6 max-h-[80vh] overflow-y-auto custom-scrollbar">
-        {/* ─── Encabezado Limpio del Listado ─────────────────────────────── */}
+        {/* ─── Encabezado Limpio del Programa ─────────────────────────────── */}
         <div className="p-4 rounded-xl bg-app-surface border border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="min-w-0 space-y-1">
             <div className="flex items-center gap-2.5 flex-wrap">
@@ -413,16 +413,16 @@ export function ListadoDetailModal({
 
                     {/* Trazabilidad: 3 columnas optimizadas para que fecha y hora se lean completas sin cortarse */}
                     <div className="grid grid-cols-3 gap-1.5 sm:gap-2 py-2 px-2 sm:px-2.5 rounded-lg bg-app-surface-muted/60 border border-border/50 text-[11px]">
-                      {/* 1. SEPARADO (Naranja cuando es el estado actual) */}
+                      {/* 1. ENTREGA AFECTADA (Rojo cuando es el estado actual) */}
                       <div className="min-w-0 flex flex-col">
                         <span
                           className={`text-[9px] font-bold uppercase tracking-wider mb-0.5 ${
                             frente.estado === 'SEPARADO'
-                              ? 'text-amber-700 dark:text-amber-400'
+                              ? 'text-rose-600 dark:text-rose-400'
                               : 'text-text-muted'
                           }`}
                         >
-                          Separado
+                          Entrega Afectada
                         </span>
                         {(() => {
                           const parts = formatTimestampParts(frente.fechaSeparado);
@@ -437,7 +437,7 @@ export function ListadoDetailModal({
                               <span
                                 className={`text-[10px] leading-tight block ${
                                   frente.estado === 'SEPARADO'
-                                    ? 'font-bold text-amber-700 dark:text-amber-300'
+                                    ? 'font-bold text-rose-600 dark:text-rose-400'
                                     : 'font-semibold text-text-primary'
                                 }`}
                               >
@@ -447,7 +447,7 @@ export function ListadoDetailModal({
                                 <span
                                   className={`text-[9px] leading-tight block mt-0.5 ${
                                     frente.estado === 'SEPARADO'
-                                      ? 'text-amber-700/80 dark:text-amber-400/80'
+                                      ? 'text-rose-600/80 dark:text-rose-400/80'
                                       : 'text-text-muted'
                                   }`}
                                 >
@@ -458,7 +458,7 @@ export function ListadoDetailModal({
                                 <span
                                   className={`text-[9px] truncate block mt-0.5 ${
                                     frente.estado === 'SEPARADO'
-                                      ? 'text-amber-700/80 dark:text-amber-400/80'
+                                      ? 'text-rose-600/80 dark:text-rose-400/80'
                                       : 'text-text-muted'
                                   }`}
                                 >
@@ -470,7 +470,7 @@ export function ListadoDetailModal({
                         })()}
                       </div>
 
-                      {/* 2. ENTREGADO (Verde cuando es el estado actual) */}
+                      {/* 2. REGRESO DE MATERIAL (Verde cuando es el estado actual) */}
                       <div
                         className={`min-w-0 border-l pl-1.5 sm:pl-2 flex flex-col ${
                           frente.estado === 'ENTREGADO' ? 'border-emerald-200 dark:border-emerald-800/50' : 'border-border/50'
@@ -483,7 +483,7 @@ export function ListadoDetailModal({
                               : 'text-text-muted'
                           }`}
                         >
-                          Entregado
+                          Regreso Material
                         </span>
                         {(() => {
                           const parts = formatTimestampParts(frente.fechaEntregado);
@@ -602,7 +602,7 @@ export function ListadoDetailModal({
                         </div>
                       ) : (
                         <>
-                          {/* SEPARAR */}
+                          {/* ENTREGA AFECTADA (ANTES SEPARAR) */}
                           {frente.estado === 'PENDIENTE' && canUserOperateSeparar && (
                             confirmInlineAction?.tipoFrente === frente.tipoFrente &&
                             confirmInlineAction.accion === 'separar' ? (
@@ -613,10 +613,10 @@ export function ListadoDetailModal({
                                     setConfirmInlineAction(null);
                                     handleSepararFrente(frente.tipoFrente);
                                   }}
-                                  className="flex-1 text-xs h-8 inline-flex items-center justify-center gap-1 rounded-lg font-bold bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white shadow-xs transition-colors cursor-pointer"
+                                  className="flex-1 text-xs h-8 inline-flex items-center justify-center gap-1 rounded-lg font-bold bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white shadow-xs transition-colors cursor-pointer"
                                 >
                                   <Icon name="check" size="xs" />
-                                  <span>¿Confirmar separar?</span>
+                                  <span>¿Confirmar entrega afectada?</span>
                                 </button>
                                 <button
                                   type="button"
@@ -636,15 +636,15 @@ export function ListadoDetailModal({
                                     accion: 'separar',
                                   })
                                 }
-                                className="w-full text-xs h-8 inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white shadow-xs transition-colors cursor-pointer"
+                                className="w-full text-xs h-8 inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white shadow-xs transition-colors cursor-pointer"
                               >
-                                <span>Separar</span>
+                                <span>Entrega Afectada</span>
                                 <Icon name="arrow_forward" size="xs" />
                               </button>
                             )
                           )}
 
-                          {/* ENTREGAR A PRODUCCIÓN */}
+                          {/* REGRESO DE MATERIAL (ANTES ENTREGAR A PRODUCCION) */}
                           {frente.estado === 'SEPARADO' && canUserOperateEntregar && (
                             confirmInlineAction?.tipoFrente === frente.tipoFrente &&
                             confirmInlineAction.accion === 'entregar' ? (
@@ -658,7 +658,7 @@ export function ListadoDetailModal({
                                   className="flex-1 text-xs h-8 inline-flex items-center justify-center gap-1 rounded-lg font-bold bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white shadow-xs transition-colors cursor-pointer"
                                 >
                                   <Icon name="check" size="xs" />
-                                  <span>¿Confirmar entrega?</span>
+                                  <span>¿Confirmar regreso material?</span>
                                 </button>
                                 <button
                                   type="button"
@@ -680,7 +680,7 @@ export function ListadoDetailModal({
                                 }
                                 className="w-full text-xs h-8 inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white shadow-xs transition-colors cursor-pointer"
                               >
-                                <span>Entregar a Prod.</span>
+                                <span>Regreso de Material</span>
                                 <Icon name="arrow_forward" size="xs" />
                               </button>
                             )

@@ -24,8 +24,8 @@ export interface ListadoTransitionModalProps {
 
 const MOTIVOS_RETROCESO_LISTADO = [
   'Material faltante para completar el lote',
-  'Material o piel no cumple especificación de calidad',
-  'Ajuste en número de listado o componentes',
+  'Material no cumple especificación de calidad',
+  'Ajuste en número de programa o componentes',
   'Cambio de programación en línea de producción',
   'Error en asignación o surtido de almacén',
   'Pausa o reasignación de la orden de producción',
@@ -33,9 +33,9 @@ const MOTIVOS_RETROCESO_LISTADO = [
 
 const MOTIVOS_CANCELACION_LISTADO = [
   'Orden de producción cancelada',
-  'Listado duplicado o sustituido',
+  'Programa duplicado o sustituido',
   'Cambio mayor de modelo o ingeniería',
-  'Error de captura en listado o línea',
+  'Error de captura en programa o línea',
 ];
 
 const ACTION_CONFIG: Record<
@@ -49,18 +49,18 @@ const ACTION_CONFIG: Record<
   }
 > = {
   retroceder: {
-    title: 'Retroceder a Materiales Pendientes',
+    title: 'Retroceder a Programas Pendientes',
     description:
-      'Esta acción reinicia el estado de los materiales seleccionados y los manda directamente al inicio como Materiales Pendientes. Debe indicar el motivo del retroceso.',
+      'Esta acción reinicia el estado de los componentes seleccionados y los manda directamente al inicio como Pendientes. Debe indicar el motivo del retroceso.',
     confirmLabel: 'Retroceder a Pendientes',
     confirmVariant: 'warning',
     confirmIcon: 'undo',
   },
   cancelar: {
-    title: 'Cancelar Listado Completo',
+    title: 'Cancelar Programa Completo',
     description:
-      'Esta acción cancela el listado y lo deja fuera del flujo operativo. Debe indicar el motivo de la cancelación.',
-    confirmLabel: 'Cancelar Listado',
+      'Esta acción cancela el programa y lo deja fuera del flujo operativo. Debe indicar el motivo de la cancelación.',
+    confirmLabel: 'Cancelar Programa',
     confirmVariant: 'danger',
     confirmIcon: 'cancel',
   },

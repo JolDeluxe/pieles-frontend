@@ -9,6 +9,7 @@ export interface LineaProduccionItem {
   departamentoId: number;
   area: AreaProduccion;
   orden?: number;
+  diasTolerancia?: number;
   permiteDirectos: boolean;
   permiteIndirectos: boolean;
   permiteBolsas: boolean;
@@ -36,6 +37,7 @@ export interface CreateLineaInput {
   nombre: string;
   departamentoId: number;
   area: AreaProduccion;
+  diasTolerancia?: number;
   permiteDirectos?: boolean;
   permiteIndirectos?: boolean;
   permiteBolsas?: boolean;
@@ -44,6 +46,7 @@ export interface CreateLineaInput {
 export interface UpdateLineaInput {
   nombre?: string;
   area?: AreaProduccion;
+  diasTolerancia?: number;
   permiteDirectos?: boolean;
   permiteIndirectos?: boolean;
   permiteBolsas?: boolean;

@@ -406,9 +406,9 @@ export function ListadoFormModal({
   // Renderizador de campos del formulario
   const renderCamposFormulario = () => (
     <div className="space-y-4">
-      {/* Número de Listado */}
+      {/* Número de Programa */}
       <div className="space-y-1.5">
-        <Label htmlFor="numeroListado">Número de Listado</Label>
+        <Label htmlFor="numeroListado">Número de Programa</Label>
         <Input
           ref={numeroListadoInputRef}
           id="numeroListado"
@@ -427,12 +427,12 @@ export function ListadoFormModal({
               }
             }
           }}
-          placeholder="Ej. LST-2026-001"
+          placeholder="Ej. PROG-2026-001"
           className="font-mono uppercase"
           disabled={isFormDisabled}
         />
         <p className="text-2xs text-text-muted">
-          Identificador único del listado. No puede repetirse en el sistema.
+          Identificador único del programa. No puede repetirse en el sistema.
         </p>
       </div>
 
@@ -492,10 +492,10 @@ export function ListadoFormModal({
         <ModalHeader
           title={
             isEditing
-              ? 'Editar Listado'
+              ? 'Editar Programa'
               : modoRegistro === 'MULTIPLE'
-                ? 'Registro de Listados'
-                : 'Nuevo Listado'
+                ? 'Registro de Programas'
+                : 'Nuevo Programa'
           }
           onClose={handleRequestClose}
         />
@@ -554,13 +554,13 @@ export function ListadoFormModal({
                   <div className="space-y-1">
                     <p className="font-semibold text-warning-text">
                       {isListadoCancelado
-                        ? 'Listado Cancelado'
-                        : 'Listado Finalizado (Materiales Descontados)'}
+                        ? 'Programa Cancelado'
+                        : 'Programa Finalizado (Descontado en Sistema)'}
                     </p>
                     <p className="text-2xs text-text-secondary leading-relaxed">
                       {isListadoCancelado
-                        ? 'No se pueden modificar los datos de un listado que ha sido cancelado.'
-                        : 'Los materiales de este listado ya fueron descontados en el sistema. Para modificar sus datos, debe retroceder primero el descuento a PENDIENTE desde el módulo correspondiente.'}
+                        ? 'No se pueden modificar los datos de un programa que ha sido cancelado.'
+                        : 'Los componentes de este programa ya fueron descontados en el sistema. Para modificar sus datos, debe retroceder primero el descuento desde el módulo correspondiente.'}
                     </p>
                   </div>
                 </div>
@@ -568,8 +568,8 @@ export function ListadoFormModal({
 
               <p className="text-xs text-text-secondary -mt-2">
                 {isEditing
-                  ? 'Modifica los datos del listado de material.'
-                  : 'Registra un nuevo listado de material para la línea de producción indicada.'}
+                  ? 'Modifica los datos del programa.'
+                  : 'Registra un nuevo programa para la línea de producción indicada.'}
               </p>
 
               {renderCamposFormulario()}

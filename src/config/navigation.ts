@@ -10,7 +10,7 @@ import type { NavItem } from '@/shared/types/navigation.types';
 export const DEFAULT_NAV_ITEMS: NavItem[] = [
   {
     id: 'listados',
-    name: 'Listados',
+    name: 'Programas',
     icon: 'assignment',
     route: ROUTES.LISTADOS,
     permission: PERMISOS.LISTADO_VER,
