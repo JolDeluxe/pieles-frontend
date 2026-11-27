@@ -424,6 +424,7 @@ export function ListadosHistorialPage(): ReactNode {
         emptyMessage="Sin listados en este mes"
         allowSelection={false}
         disableSemaforo={true}
+        showDescontadoInLegend={true}
         acciones={{
           onVerDetalle: handleOpenDetail,
           onEditar: handleOpenEditar,

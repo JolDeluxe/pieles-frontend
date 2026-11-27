@@ -55,6 +55,7 @@ interface ListadosParalelaTableProps {
   hideActions?: boolean;
   headerRight?: ReactNode;
   disableSemaforo?: boolean;
+  showDescontadoInLegend?: boolean;
   pagination?: {
     currentPage: number;
     totalPages: number;
@@ -510,6 +511,7 @@ export function ListadosPendientesParalelaTable({
   hideActions = false,
   headerRight,
   disableSemaforo = false,
+  showDescontadoInLegend = false,
   pagination,
 }: ListadosParalelaTableProps): ReactNode {
   // Ordenamiento independiente por Orden de Línea, Fecha Requerida y Número de Listado
@@ -658,10 +660,12 @@ export function ListadosPendientesParalelaTable({
             <Icon name="check" size="16px" weight={800} className="text-emerald-600 shrink-0" />
             <span className="text-text-secondary font-semibold">Regreso de Material</span>
           </span>
-          <span className="flex items-center gap-1.5 font-medium">
-            <Icon name="done_all" size="18px" weight={800} className="text-purple-600 shrink-0" />
-            <span className="text-text-secondary font-semibold">Descontado de Sistema</span>
-          </span>
+          {showDescontadoInLegend && (
+            <span className="flex items-center gap-1.5 font-medium">
+              <Icon name="done_all" size="18px" weight={800} className="text-purple-600 shrink-0" />
+              <span className="text-text-secondary font-semibold">Descontado de Sistema</span>
+            </span>
+          )}
         </div>
         {headerRight && <div className="flex items-center gap-2 shrink-0">{headerRight}</div>}
       </div>
