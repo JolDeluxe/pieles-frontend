@@ -92,19 +92,34 @@ const MonitorValesPendientesPage = lazy(() =>
 */
 
 
-import { CuadraLoading } from '@/components/ui/cuadra-loading';
+import { Skeleton } from '@/components/ui/skeleton';
 
-/** Fallback visual elegante con logo de Cuadra durante la carga asíncrona de chunks de ruta */
-function RouteLoadingFallback() {
+/**
+ * Fallback de carga durante la descarga del chunk JS del submódulo.
+ * Muestra directamente un Skeleton sutil para que la transición sea instantánea
+ * sin parpadeos ni pantallas intermedias.
+ */
+function ModuleLoadingFallback() {
   return (
-    <div className="flex h-full min-h-[300px] w-full items-center justify-center p-8">
-      <CuadraLoading size="md" />
+    <div className="w-full space-y-4 animate-in fade-in duration-200">
+      <div className="py-2 px-3 bg-app-surface/90 border border-border/80 rounded-lg flex items-center justify-between">
+        <Skeleton className="h-4 w-48" />
+        <Skeleton className="h-4 w-24" />
+      </div>
+      <div className="bg-app-surface border border-border rounded-xl p-4 space-y-3">
+        <Skeleton className="h-6 w-36 mb-4" />
+        <div className="space-y-2.5">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      </div>
     </div>
   );
 }
 
 function withSuspense(component: ReactNode): ReactNode {
-  return <Suspense fallback={<RouteLoadingFallback />}>{component}</Suspense>;
+  return <Suspense fallback={<ModuleLoadingFallback />}>{component}</Suspense>;
 }
 
 /**
