@@ -423,6 +423,7 @@ export function ListadosHistorialPage(): ReactNode {
         isAccesoriosDisabled={isAccesoriosDisabled}
         emptyMessage="Sin listados en este mes"
         allowSelection={false}
+        disableSemaforo={true}
         acciones={{
           onVerDetalle: handleOpenDetail,
           onEditar: handleOpenEditar,

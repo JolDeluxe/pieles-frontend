@@ -54,6 +54,7 @@ interface ListadosParalelaTableProps {
   onToggleSelectAccesorios?: (id: number) => void;
   hideActions?: boolean;
   headerRight?: ReactNode;
+  disableSemaforo?: boolean;
   pagination?: {
     currentPage: number;
     totalPages: number;
@@ -508,6 +509,7 @@ export function ListadosPendientesParalelaTable({
   onToggleSelectAccesorios,
   hideActions = false,
   headerRight,
+  disableSemaforo = false,
   pagination,
 }: ListadosParalelaTableProps): ReactNode {
   // Ordenamiento independiente por Orden de Línea, Fecha Requerida y Número de Listado
@@ -725,6 +727,11 @@ export function ListadosPendientesParalelaTable({
                         ? 'SEPARADO'
                         : 'PENDIENTE';
 
+                      const semaforo =
+                        disableSemaforo || estadoPrograma === 'DESCONTADO'
+                          ? 'VERDE'
+                          : calcularSemaforo(bota.fechaRequerida, bota.lineaProduccion.diasTolerancia ?? 3);
+
                       return (
                         <Fragment key={`bota-row-fragment-${bota.id}`}>
                           {isNewGroup && (
@@ -741,6 +748,10 @@ export function ListadosPendientesParalelaTable({
                                 ? 'animate-entregar-success'
                                 : isHighlighted
                                 ? 'animate-highlight-row'
+                                : semaforo === 'ROJO'
+                                ? 'bg-red-500/15 hover:bg-red-500/25 border-l-4 border-l-red-600'
+                                : semaforo === 'AMARILLO'
+                                ? 'bg-amber-500/15 hover:bg-amber-500/25 border-l-4 border-l-amber-500'
                                 : 'bg-app-surface hover:bg-app-surface-muted/60'
                             } ${idx > 0 && !isNewGroup ? 'border-t border-border/60' : ''}`}
                           >
@@ -763,7 +774,13 @@ export function ListadosPendientesParalelaTable({
                             {/* LINEA / MAQ visible en TODAS las filas */}
                             <td
                               title={bota.lineaProduccion.nombre.toUpperCase()}
-                              className="px-2 sm:px-2.5 truncate text-xs sm:text-[13px] md:text-sm py-1 sm:py-1.5 font-bold text-text-primary"
+                              className={`px-2 sm:px-2.5 truncate text-xs sm:text-[13px] md:text-sm py-1 sm:py-1.5 font-bold ${
+                                semaforo === 'ROJO'
+                                  ? 'text-red-900 dark:text-red-200'
+                                  : semaforo === 'AMARILLO'
+                                  ? 'text-amber-900 dark:text-amber-200'
+                                  : 'text-text-primary'
+                              }`}
                             >
                               {bota.lineaProduccion.nombre.toUpperCase()}
                             </td>
@@ -771,7 +788,13 @@ export function ListadosPendientesParalelaTable({
                             {/* LISTA con truncate (...) y tooltip */}
                             <td
                               title={bota.numeroListado}
-                              className={`px-2 sm:px-2.5 truncate font-mono font-bold text-text-primary text-xs sm:text-sm md:text-[15px] ${
+                              className={`px-2 sm:px-2.5 truncate font-mono font-bold text-xs sm:text-sm md:text-[15px] ${
+                                semaforo === 'ROJO'
+                                  ? 'text-red-950 dark:text-red-100 font-black'
+                                  : semaforo === 'AMARILLO'
+                                  ? 'text-amber-950 dark:text-amber-100 font-black'
+                                  : 'text-text-primary'
+                              } ${
                                 isNewGroup ? 'pt-1.5 pb-1 sm:pt-2 sm:pb-1.5' : 'py-1 sm:py-1.5'
                               }`}
                             >
@@ -779,41 +802,36 @@ export function ListadosPendientesParalelaTable({
                             </td>
 
                             {/* FECHA a la derecha con semáforo */}
-                            {(() => {
-                              const semaforo = calcularSemaforo(bota.fechaRequerida, bota.lineaProduccion.diasTolerancia ?? 3);
-                              return (
-                                <td
-                                  className={`px-2 sm:px-2.5 text-right whitespace-nowrap text-[11px] sm:text-xs md:text-[13px] font-bold ${
-                                    isNewGroup ? 'pt-1.5 pb-1 sm:pt-2 sm:pb-1.5' : 'py-1 sm:py-1.5'
-                                  }`}
-                                >
-                                  <span
-                                    className={`inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded-sm ${
-                                      semaforo === 'ROJO'
-                                        ? 'bg-red-500/15 text-red-600 dark:text-red-400 font-extrabold'
-                                        : semaforo === 'AMARILLO'
-                                        ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 font-extrabold'
-                                        : 'text-text-secondary font-medium'
-                                    }`}
-                                    title={
-                                      semaforo === 'ROJO'
-                                        ? `Excedido de tolerancia (${bota.lineaProduccion.diasTolerancia ?? 3} días sin descontar)`
-                                        : semaforo === 'AMARILLO'
-                                        ? `Próximo al límite (1 día restante de tolerancia)`
-                                        : 'Dentro de fecha de tolerancia'
-                                    }
-                                  >
-                                    {semaforo === 'ROJO' && (
-                                      <span className="w-2 h-2 rounded-full bg-red-600 shrink-0 shadow-xs animate-pulse" />
-                                    )}
-                                    {semaforo === 'AMARILLO' && (
-                                      <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0 shadow-xs" />
-                                    )}
-                                    {formatFecha(bota.fechaRequerida)}
-                                  </span>
-                                </td>
-                              );
-                            })()}
+                            <td
+                              className={`px-2 sm:px-2.5 text-right whitespace-nowrap text-[11px] sm:text-xs md:text-[13px] font-bold ${
+                                isNewGroup ? 'pt-1.5 pb-1 sm:pt-2 sm:pb-1.5' : 'py-1 sm:py-1.5'
+                              }`}
+                            >
+                              <span
+                                className={`inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded-sm ${
+                                  semaforo === 'ROJO'
+                                    ? 'text-red-700 dark:text-red-300 font-black'
+                                    : semaforo === 'AMARILLO'
+                                    ? 'text-amber-700 dark:text-amber-300 font-black'
+                                    : 'text-text-secondary font-medium'
+                                }`}
+                                title={
+                                  semaforo === 'ROJO'
+                                    ? `Excedido de tolerancia (${bota.lineaProduccion.diasTolerancia ?? 3} días sin descontar)`
+                                    : semaforo === 'AMARILLO'
+                                    ? `Próximo al límite (1 día restante de tolerancia)`
+                                    : 'Dentro de fecha de tolerancia'
+                                }
+                              >
+                                {semaforo === 'ROJO' && (
+                                  <span className="w-2 h-2 rounded-full bg-red-600 shrink-0 shadow-xs animate-pulse" />
+                                )}
+                                {semaforo === 'AMARILLO' && (
+                                  <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0 shadow-xs" />
+                                )}
+                                {formatFecha(bota.fechaRequerida)}
+                              </span>
+                            </td>
 
                             {/* Indicador único de Estado del Programa */}
                             <td
@@ -909,6 +927,11 @@ export function ListadosPendientesParalelaTable({
                         ? 'SEPARADO'
                         : 'PENDIENTE';
 
+                      const semaforo =
+                        disableSemaforo || estadoPrograma === 'DESCONTADO'
+                          ? 'VERDE'
+                          : calcularSemaforo(acc.fechaRequerida, acc.lineaProduccion.diasTolerancia ?? 3);
+
                       return (
                         <Fragment key={`acc-row-fragment-${acc.id}`}>
                           {isNewGroup && (
@@ -925,6 +948,10 @@ export function ListadosPendientesParalelaTable({
                                 ? 'animate-entregar-success'
                                 : isHighlighted
                                 ? 'animate-highlight-row'
+                                : semaforo === 'ROJO'
+                                ? 'bg-red-500/15 hover:bg-red-500/25 border-l-4 border-l-red-600'
+                                : semaforo === 'AMARILLO'
+                                ? 'bg-amber-500/15 hover:bg-amber-500/25 border-l-4 border-l-amber-500'
                                 : 'bg-app-surface hover:bg-app-surface-muted/60'
                             } ${idx > 0 && !isNewGroup ? 'border-t border-border/60' : ''}`}
                           >
@@ -947,7 +974,13 @@ export function ListadosPendientesParalelaTable({
                             {/* LINEA / MAQ visible en TODAS las filas */}
                             <td
                               title={acc.lineaProduccion.nombre.toUpperCase()}
-                              className="px-2 sm:px-2.5 truncate text-xs sm:text-[13px] md:text-sm py-1 sm:py-1.5 font-bold text-text-primary"
+                              className={`px-2 sm:px-2.5 truncate text-xs sm:text-[13px] md:text-sm py-1 sm:py-1.5 font-bold ${
+                                semaforo === 'ROJO'
+                                  ? 'text-red-900 dark:text-red-200'
+                                  : semaforo === 'AMARILLO'
+                                  ? 'text-amber-900 dark:text-amber-200'
+                                  : 'text-text-primary'
+                              }`}
                             >
                               {acc.lineaProduccion.nombre.toUpperCase()}
                             </td>
@@ -955,7 +988,13 @@ export function ListadosPendientesParalelaTable({
                             {/* LISTA con truncate (...) y tooltip */}
                             <td
                               title={acc.numeroListado}
-                              className={`px-2 sm:px-2.5 truncate font-mono font-bold text-text-primary text-xs sm:text-sm md:text-[15px] ${
+                              className={`px-2 sm:px-2.5 truncate font-mono font-bold text-xs sm:text-sm md:text-[15px] ${
+                                semaforo === 'ROJO'
+                                  ? 'text-red-950 dark:text-red-100 font-black'
+                                  : semaforo === 'AMARILLO'
+                                  ? 'text-amber-950 dark:text-amber-100 font-black'
+                                  : 'text-text-primary'
+                              } ${
                                 isNewGroup ? 'pt-1.5 pb-1 sm:pt-2 sm:pb-1.5' : 'py-1 sm:py-1.5'
                               }`}
                             >
@@ -963,41 +1002,36 @@ export function ListadosPendientesParalelaTable({
                             </td>
 
                             {/* FECHA a la derecha con semáforo */}
-                            {(() => {
-                              const semaforo = calcularSemaforo(acc.fechaRequerida, acc.lineaProduccion.diasTolerancia ?? 3);
-                              return (
-                                <td
-                                  className={`px-2 sm:px-2.5 text-right whitespace-nowrap text-[11px] sm:text-xs md:text-[13px] font-bold ${
-                                    isNewGroup ? 'pt-1.5 pb-1 sm:pt-2 sm:pb-1.5' : 'py-1 sm:py-1.5'
-                                  }`}
-                                >
-                                  <span
-                                    className={`inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded-sm ${
-                                      semaforo === 'ROJO'
-                                        ? 'bg-red-500/15 text-red-600 dark:text-red-400 font-extrabold'
-                                        : semaforo === 'AMARILLO'
-                                        ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 font-extrabold'
-                                        : 'text-text-secondary font-medium'
-                                    }`}
-                                    title={
-                                      semaforo === 'ROJO'
-                                        ? `Excedido de tolerancia (${acc.lineaProduccion.diasTolerancia ?? 3} días sin descontar)`
-                                        : semaforo === 'AMARILLO'
-                                        ? `Próximo al límite (1 día restante de tolerancia)`
-                                        : 'Dentro de fecha de tolerancia'
-                                    }
-                                  >
-                                    {semaforo === 'ROJO' && (
-                                      <span className="w-2 h-2 rounded-full bg-red-600 shrink-0 shadow-xs animate-pulse" />
-                                    )}
-                                    {semaforo === 'AMARILLO' && (
-                                      <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0 shadow-xs" />
-                                    )}
-                                    {formatFecha(acc.fechaRequerida)}
-                                  </span>
-                                </td>
-                              );
-                            })()}
+                            <td
+                              className={`px-2 sm:px-2.5 text-right whitespace-nowrap text-[11px] sm:text-xs md:text-[13px] font-bold ${
+                                isNewGroup ? 'pt-1.5 pb-1 sm:pt-2 sm:pb-1.5' : 'py-1 sm:py-1.5'
+                              }`}
+                            >
+                              <span
+                                className={`inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded-sm ${
+                                  semaforo === 'ROJO'
+                                    ? 'text-red-700 dark:text-red-300 font-black'
+                                    : semaforo === 'AMARILLO'
+                                    ? 'text-amber-700 dark:text-amber-300 font-black'
+                                    : 'text-text-secondary font-medium'
+                                }`}
+                                title={
+                                  semaforo === 'ROJO'
+                                    ? `Excedido de tolerancia (${acc.lineaProduccion.diasTolerancia ?? 3} días sin descontar)`
+                                    : semaforo === 'AMARILLO'
+                                    ? `Próximo al límite (1 día restante de tolerancia)`
+                                    : 'Dentro de fecha de tolerancia'
+                                }
+                              >
+                                {semaforo === 'ROJO' && (
+                                  <span className="w-2 h-2 rounded-full bg-red-600 shrink-0 shadow-xs animate-pulse" />
+                                )}
+                                {semaforo === 'AMARILLO' && (
+                                  <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0 shadow-xs" />
+                                )}
+                                {formatFecha(acc.fechaRequerida)}
+                              </span>
+                            </td>
 
                             {/* Indicador único de Estado del Programa */}
                             <td
