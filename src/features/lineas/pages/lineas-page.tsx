@@ -1,4 +1,5 @@
 import { useState, useMemo, type ReactNode } from 'react';
+import { CuadraLoading } from '@/components/ui/cuadra-loading';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Icon } from '@/components/ui/icon';
@@ -380,9 +381,8 @@ export function LineasPage(): ReactNode {
 
       {/* Contenido principal: Tablero Dividido BOTA | ACCESORIOS */}
       {isLoading ? (
-        <div className="w-full p-12 flex flex-col items-center justify-center gap-3 bg-app-surface rounded-xl border border-border">
-          <Spinner size="lg" />
-          <p className="text-sm text-text-secondary font-medium">Cargando líneas y maquilas...</p>
+        <div className="w-full p-12 flex flex-col items-center justify-center bg-app-surface rounded-xl border border-border">
+          <CuadraLoading size="md" />
         </div>
       ) : (
         <div className="bg-app-surface border border-border rounded-xl shadow-2xs overflow-hidden w-full">

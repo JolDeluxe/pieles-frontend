@@ -92,14 +92,13 @@ const MonitorValesPendientesPage = lazy(() =>
 */
 
 
-/** Fallback visual ligero durante la carga asíncrona de chunks de ruta */
+import { CuadraLoading } from '@/components/ui/cuadra-loading';
+
+/** Fallback visual elegante con logo de Cuadra durante la carga asíncrona de chunks de ruta */
 function RouteLoadingFallback() {
   return (
-    <div className="flex h-full min-h-[300px] w-full items-center justify-center">
-      <div className="flex flex-col items-center gap-3">
-        <div className="h-8 w-8 animate-spin rounded-full border-3 border-brand-500 border-t-transparent" />
-        <span className="text-xs font-medium text-text-muted">Cargando módulo...</span>
-      </div>
+    <div className="flex h-full min-h-[300px] w-full items-center justify-center p-8">
+      <CuadraLoading size="md" />
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { Navigate, Outlet } from 'react-router';
 import { useAuthSession } from '@/app/providers/auth-provider';
 import { usePermissions } from '@/shared/hooks/use-permissions';
 import { ROUTES } from './route-paths';
-import { Spinner } from '@/components/ui/spinner';
+import { CuadraLoading } from '@/components/ui/cuadra-loading';
 import type { PermisoCodigo } from '@/config/permissions';
 import type { ReactNode } from 'react';
 
@@ -15,11 +15,7 @@ export function RequireAuth({ children }: { children?: ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthSession();
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-app-bg">
-        <Spinner size="36px" />
-      </div>
-    );
+    return <CuadraLoading size="screen" />;
   }
 
   if (!isAuthenticated) {
@@ -37,11 +33,7 @@ export function RedirectIfAuthenticated({ children }: { children?: ReactNode }) 
   const { isAuthenticated, isLoading } = useAuthSession();
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-app-bg">
-        <Spinner size="36px" />
-      </div>
-    );
+    return <CuadraLoading size="screen" />;
   }
 
   if (isAuthenticated) {
@@ -72,11 +64,7 @@ export function RequirePermission({
   const { can, canAny, canAll } = usePermissions();
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-app-bg">
-        <Spinner size="36px" />
-      </div>
-    );
+    return <CuadraLoading size="screen" />;
   }
 
   if (!isAuthenticated) {
@@ -120,11 +108,7 @@ export function RequireRole({
   const { user, isAuthenticated, isLoading } = useAuthSession();
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-app-bg">
-        <Spinner size="36px" />
-      </div>
-    );
+    return <CuadraLoading size="screen" />;
   }
 
   if (!isAuthenticated) {
