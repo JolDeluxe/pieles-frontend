@@ -220,7 +220,6 @@ export function UserFormModal({
   const [rolId, setRolId] = useState<number>(0);
   const [departamentoId, setDepartamentoId] = useState<number | undefined>(undefined);
   const [frentesSurtido, setFrentesSurtido] = useState<string[]>([]);
-  const [frentesAuditor, setFrentesAuditor] = useState<string[]>([]);
   const [lineasAsignadas, setLineasAsignadas] = useState<number[]>([]);
   const [modoLineas, setModoLineas] = useState<'TODAS' | 'ESPECIFICAS'>('TODAS');
 
@@ -248,7 +247,6 @@ export function UserFormModal({
 
   const selectedRole = availableRoles.find((r) => r.id === rolId);
   const isAlmacenista = selectedRole?.codigo === 'ALMACENISTA';
-  const isAuditor = selectedRole?.codigo === 'AUDITOR';
 
   // Sync form values on open / change user
   useEffect(() => {
@@ -267,16 +265,6 @@ export function UserFormModal({
           }
         } else {
           setFrentesSurtido([]);
-        }
-        if (user.tipoMaterialAuditor) {
-          const listAud = user.tipoMaterialAuditor.split(',').map((s) => s.trim().toUpperCase());
-          if (listAud.includes('TODOS')) {
-            setFrentesAuditor(['DIRECTOS', 'INDIRECTOS', 'BOLSAS']);
-          } else {
-            setFrentesAuditor(listAud.filter((s) => ['DIRECTOS', 'INDIRECTOS', 'BOLSAS'].includes(s)));
-          }
-        } else {
-          setFrentesAuditor([]);
         }
         if (user.lineasAsignadas && user.lineasAsignadas.length > 0) {
           const activeLinesIds = new Set(availableLines.map((l) => l.id));
@@ -330,13 +318,8 @@ export function UserFormModal({
 
         if (defaultRol?.codigo === 'ALMACENISTA') {
           setFrentesSurtido(['DIRECTOS']);
-          setFrentesAuditor([]);
-        } else if (defaultRol?.codigo === 'AUDITOR') {
-          setFrentesAuditor(['DIRECTOS', 'INDIRECTOS', 'BOLSAS']);
-          setFrentesSurtido([]);
         } else {
           setFrentesSurtido([]);
-          setFrentesAuditor([]);
         }
         setLineasAsignadas([]);
         setModoLineas('TODAS');
@@ -355,37 +338,13 @@ export function UserFormModal({
     setRolId(newRolId);
     const newRole = roles.find((r) => r.id === newRolId);
     if (newRole?.codigo === 'ALMACENISTA') {
-      if (frentesSurtido.length === 0) setFrentesSurtido(['DIRECTOS']);
-      setFrentesAuditor([]);
-    } else if (newRole?.codigo === 'AUDITOR') {
-      if (frentesAuditor.length === 0) setFrentesAuditor(['DIRECTOS', 'INDIRECTOS', 'BOLSAS']);
-      setFrentesSurtido([]);
+      // mantiene lineas
     } else {
       setFrentesSurtido([]);
-      setFrentesAuditor([]);
       setLineasAsignadas([]);
       setAreasVale([]);
       setDepartamentosValeIds([]);
     }
-  };
-
-  const handleToggleFrente = (frente: string) => {
-    setFrentesSurtido((prev) => {
-      const next = prev.includes(frente) ? prev.filter((f) => f !== frente) : [...prev, frente];
-      if (next.length === 1 && next[0] === 'BOLSAS') {
-        const lineasBotaIds = new Set(
-          availableLines.filter((l) => l.area === 'BOTA').map((l) => l.id),
-        );
-        setLineasAsignadas((prevLineas) => prevLineas.filter((id) => !lineasBotaIds.has(id)));
-      }
-      return next;
-    });
-  };
-
-  const handleToggleFrenteAuditor = (frente: string) => {
-    setFrentesAuditor((prev) =>
-      prev.includes(frente) ? prev.filter((f) => f !== frente) : [...prev, frente],
-    );
   };
 
   const handleToggleLinea = (id: number) => {
@@ -454,43 +413,10 @@ export function UserFormModal({
     setIsSubmitting(true);
     setError(null);
 
-    if (isAlmacenista && frentesSurtido.length === 0) {
-      setError('Seleccione al menos un tipo de surtido.');
-      setIsSubmitting(false);
-      return;
-    }
-
-    if (isAuditor && frentesAuditor.length === 0) {
-      setError('Seleccione al menos un tipo de material.');
-      setIsSubmitting(false);
-      return;
-    }
-
-    const soloBolsas = frentesSurtido.length === 1 && frentesSurtido[0] === 'BOLSAS';
-    let lineasValidas = lineasAsignadas;
-    if (isAlmacenista && soloBolsas) {
-      const lineasBotaIds = new Set(
-        availableLines.filter((l) => l.area === 'BOTA').map((l) => l.id),
-      );
-      lineasValidas = lineasAsignadas.filter((id) => !lineasBotaIds.has(id));
-      if (lineasValidas.length !== lineasAsignadas.length) {
-        setLineasAsignadas(lineasValidas);
-      }
-    }
-
     try {
-      const lineas = isAlmacenista ? (modoLineas === 'TODAS' ? [] : lineasValidas) : [];
-      const tipoSurtidoCalculado = isAlmacenista
-        ? frentesSurtido.length === 3
-          ? 'TODOS'
-          : frentesSurtido.join(',')
-        : null;
-
-      const tipoMaterialAuditorCalculado = isAuditor
-        ? frentesAuditor.length === 3
-          ? 'TODOS'
-          : frentesAuditor.join(',')
-        : null;
+      const lineas = isAlmacenista ? (modoLineas === 'TODAS' ? [] : lineasAsignadas) : [];
+      const tipoSurtidoCalculado = 'TODOS';
+      const tipoMaterialAuditorCalculado = 'TODOS';
 
       const activeDeptoValeIdsSet = new Set(availableDepartamentosVale.map((d) => d.id));
       const deptosValeValidos = isAlmacenista
@@ -692,88 +618,6 @@ export function UserFormModal({
               </div>
             )}
           </div>
-
-          {/* Segmentación para ALMACENISTA */}
-          {isAlmacenista && (
-            <div className="space-y-2 p-3.5 bg-cuadra-arena/30 rounded-xl border border-border">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs font-semibold text-text-primary uppercase tracking-wider">
-                  Tipo de Surtido Autorizado (Listados) *
-                </Label>
-                <span className="text-2xs text-text-muted">
-                  {frentesSurtido.length} seleccionado(s)
-                </span>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { id: 'DIRECTOS', label: 'Directos' },
-                  { id: 'INDIRECTOS', label: 'Indirectos' },
-                  { id: 'BOLSAS', label: 'Bolsas' },
-                ].map((frente) => {
-                  const isChecked = frentesSurtido.includes(frente.id);
-                  return (
-                    <label
-                      key={frente.id}
-                      className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-colors ${
-                        isChecked
-                          ? 'bg-marca-primario/10 border-marca-primario/30 text-marca-primario font-medium'
-                          : 'bg-app-surface border-border text-text-secondary hover:bg-app-surface-muted'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => handleToggleFrente(frente.id)}
-                        className="rounded border-border text-marca-primario focus:ring-marca-primario/25 h-3.5 w-3.5 cursor-pointer"
-                      />
-                      <span>{frente.label}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Segmentación para AUDITOR */}
-          {isAuditor && (
-            <div className="space-y-2 p-3.5 bg-cuadra-arena/30 rounded-xl border border-border">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs font-semibold text-text-primary uppercase tracking-wider">
-                  Tipo de Material Autorizado *
-                </Label>
-                <span className="text-2xs text-text-muted">
-                  {frentesAuditor.length} seleccionado(s)
-                </span>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { id: 'DIRECTOS', label: 'Directos' },
-                  { id: 'INDIRECTOS', label: 'Indirectos' },
-                  { id: 'BOLSAS', label: 'Bolsas' },
-                ].map((frente) => {
-                  const isChecked = frentesAuditor.includes(frente.id);
-                  return (
-                    <label
-                      key={frente.id}
-                      className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-colors ${
-                        isChecked
-                          ? 'bg-marca-primario/10 border-marca-primario/30 text-marca-primario font-medium'
-                          : 'bg-app-surface border-border text-text-secondary hover:bg-app-surface-muted'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => handleToggleFrenteAuditor(frente.id)}
-                        className="rounded border-border text-marca-primario focus:ring-marca-primario/25 h-3.5 w-3.5 cursor-pointer"
-                      />
-                      <span>{frente.label}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-          )}
 
           {/* Líneas Asignadas solo para ALMACENISTA */}
           {isAlmacenista && (

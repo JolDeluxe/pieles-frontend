@@ -175,8 +175,8 @@ export function LineasPage(): ReactNode {
           <colgroup>
             <col className="w-[8%]" /> {/* Drag Handle */}
             <col className="w-[10%]" /> {/* Posición # */}
-            <col className="w-[42%]" /> {/* Línea / Maquila */}
-            <col className="w-[22%]" /> {/* Frentes */}
+            <col className="w-[44%]" /> {/* Línea / Maquila */}
+            <col className="w-[20%]" /> {/* Tolerancia */}
             <col className="w-[18%]" /> {/* Acciones */}
           </colgroup>
           <thead>
@@ -184,7 +184,7 @@ export function LineasPage(): ReactNode {
               <th className="py-2 px-1 text-center"></th>
               <th className="py-2 px-2 text-center whitespace-nowrap">#</th>
               <th className="py-2 px-2 truncate">LÍNEA / MAQUILA</th>
-              <th className="py-2 px-2 text-center whitespace-nowrap">MATERIALES</th>
+              <th className="py-2 px-2 text-center whitespace-nowrap">TOLERANCIA</th>
               <th className="py-2 px-2 text-right"></th>
             </tr>
           </thead>
@@ -230,25 +230,11 @@ export function LineasPage(): ReactNode {
                       {line.nombre.toUpperCase()}
                     </td>
 
-                    {/* Badges de Materiales Operativos */}
+                    {/* Días de Tolerancia */}
                     <td className="px-2 text-center whitespace-nowrap">
-                      <div className="flex items-center justify-center gap-1">
-                        {line.permiteDirectos && (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-marca-primario/10 text-marca-primario border border-marca-primario/25" title="Directos habilitado">
-                            DIR
-                          </span>
-                        )}
-                        {line.permiteIndirectos && (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-marca-primario/10 text-marca-primario border border-marca-primario/25" title="Indirectos habilitado">
-                            IND
-                          </span>
-                        )}
-                        {line.permiteBolsas && (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-marca-acento/15 text-marca-primario border border-marca-acento/30" title="Bolsa habilitado">
-                            BOL
-                          </span>
-                        )}
-                      </div>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono font-bold bg-cuadra-arena/60 text-text-primary border border-border/80">
+                        {line.diasTolerancia ?? 3}d
+                      </span>
                     </td>
 
                     {/* Acciones */}

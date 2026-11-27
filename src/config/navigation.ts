@@ -15,6 +15,7 @@ export const DEFAULT_NAV_ITEMS: NavItem[] = [
     route: ROUTES.LISTADOS,
     permission: PERMISOS.LISTADO_VER,
   },
+  /* Vales comentados temporalmente para el sistema de pieles
   {
     id: 'vales',
     name: 'Vales',
@@ -22,6 +23,7 @@ export const DEFAULT_NAV_ITEMS: NavItem[] = [
     route: ROUTES.VALES,
     permission: PERMISOS.VALE_VER,
   },
+  */
   {
     id: 'proyeccion',
     name: 'Proyectar',

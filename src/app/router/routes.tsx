@@ -55,6 +55,7 @@ const ProyeccionPage = lazy(() =>
   })),
 );
 
+/* Vales componentes comentados temporalmente para el sistema de pieles
 const ValesLayoutPage = lazy(() =>
   import('@/features/vales/pages/vales-layout-page').then((m) => ({ default: m.ValesLayoutPage })),
 );
@@ -88,6 +89,7 @@ const MonitorValesPendientesPage = lazy(() =>
     default: m.MonitorValesPendientesPage,
   })),
 );
+*/
 
 
 /** Fallback visual ligero durante la carga asíncrona de chunks de ruta */
@@ -141,6 +143,7 @@ function ListadosIndexRedirect() {
 /**
  * Componente de redirección de índice para el módulo Vales basado en permisos efectivos y rol.
  */
+/* Redirección de Vales comentada temporalmente para el sistema de pieles
 function ValesIndexRedirect() {
   const { rol } = usePermissions();
   const session = useAuthSession();
@@ -163,6 +166,7 @@ function ValesIndexRedirect() {
 
   return <Navigate to={ROUTES.VALES_PENDIENTES} replace />;
 }
+*/
 
 /**
  * Árbol declarativo de rutas de React Router (SKILL.md §9).
@@ -266,6 +270,7 @@ export const routes: RouteObject[] = [
               </RequirePermission>
             ),
           },
+          /* Vales comentados temporalmente para el sistema de pieles
           {
             path: ROUTES.PROYECCION_VALES,
             element: (
@@ -277,6 +282,7 @@ export const routes: RouteObject[] = [
               </RequirePermission>
             ),
           },
+          */
 
           {
             // Módulo Listados — layout con navegación interna
@@ -349,6 +355,7 @@ export const routes: RouteObject[] = [
               },
             ],
           },
+          /* Vales comentados temporalmente para el sistema de pieles
           {
             // Monitor Kiosco de Vales Pendientes
             path: ROUTES.MONITOR_VALES_PENDIENTES,
@@ -449,6 +456,7 @@ export const routes: RouteObject[] = [
               },
             ],
           },
+          */
         ],
       },
     ],

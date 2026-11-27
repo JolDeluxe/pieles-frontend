@@ -27,14 +27,13 @@ function formatFecha(fechaStr: string): string {
   return `${day}/${month}/${year}`;
 }
 
-const ROTATION_SECONDS = 30; // 30 segundos por vista
 const INACTIVITY_MS = 10 * 1000; // 10 segundos configurados para pruebas de inactividad
 
 /**
  * Pantalla Principal de PROYECCIÓN DE PLANTA.
  * Muestra los listados y vales pendientes en tiempo real sin ruido visual innecesario.
  */
-export function ProyeccionPage({ initialVista = 'listados' }: ProyeccionPageProps): ReactNode {
+export function ProyeccionPage(_props?: ProyeccionPageProps): ReactNode {
   const { hasPermission } = usePermissions();
   const { fullscreenMode, setFullscreenMode } = useLayoutUI();
   const canVerListados = hasPermission('listado:ver');
@@ -134,65 +133,8 @@ export function ProyeccionPage({ initialVista = 'listados' }: ProyeccionPageProp
     return classifyVales(itemsValesPendientes);
   }, [itemsValesPendientes]);
 
-  // ─── Control de Vistas y Rotación Automática Continua (Loop) ───────────────
-  const hasListados = itemsListadosPendientes.length > 0;
-  const hasVales = itemsValesPendientes.length > 0;
-  const hasBothPendientes = hasListados && hasVales;
-  const hasAnyPendientes = hasListados || hasVales;
-
-  // Selección de pestaña inicial: respeta preferencias o selecciona la que tenga pendientes
-  const defaultTab: ModuloProyeccion = canVerListados ? initialVista : 'vales';
-  const [activeTab, setActiveTab] = useState<ModuloProyeccion>(defaultTab);
-  const [autoRotate, setAutoRotate] = useState<boolean>(true);
-  const [secondsRemaining, setSecondsRemaining] = useState<number>(ROTATION_SECONDS);
-
-  // La rotación automática solo debe ocurrir si:
-  // 1. autoRotate está activado
-  // 2. El usuario tiene permisos para ver ambos módulos
-  // 3. Ambos módulos tienen pendientes activos (si uno o ambos están vacíos, no rota ni gira ni muestra barra)
-  const shouldRotate = autoRotate && canVerListados && canVerVales && hasBothPendientes;
-
-  // Si una sección queda vacía pero la otra sí tiene pendientes, enfocar automáticamente la activa
-  useEffect(() => {
-    if (!autoRotate) return;
-    if (activeTab === 'listados' && !hasListados && hasVales && canVerVales) {
-      setActiveTab('vales');
-      setSecondsRemaining(ROTATION_SECONDS);
-    } else if (activeTab === 'vales' && !hasVales && hasListados && canVerListados) {
-      setActiveTab('listados');
-      setSecondsRemaining(ROTATION_SECONDS);
-    }
-  }, [hasListados, hasVales, activeTab, canVerListados, canVerVales, autoRotate]);
-
-  useEffect(() => {
-    if (!shouldRotate) {
-      setSecondsRemaining(ROTATION_SECONDS);
-      return;
-    }
-
-    if (secondsRemaining <= 0) {
-      // Loop continuo infinito: listados <-> vales
-      setActiveTab((curr) => (curr === 'listados' ? 'vales' : 'listados'));
-      setSecondsRemaining(ROTATION_SECONDS);
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      setSecondsRemaining((prev) => prev - 1);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [secondsRemaining, shouldRotate]);
-
-  const handleSelectTab = (tab: ModuloProyeccion) => {
-    setActiveTab(tab);
-    setSecondsRemaining(ROTATION_SECONDS);
-  };
-
-  const handleToggleAutoRotate = () => {
-    setAutoRotate((prev) => !prev);
-    setSecondsRemaining(ROTATION_SECONDS);
-  };
+  // ─── Control de Vistas (Listados activo en sistema de pieles) ───────────────
+  const activeTab: ModuloProyeccion = 'listados';
 
   // ─── Modo Pantalla Completa & Detección de Inactividad ──────────────────────
   const containerRef = useRef<HTMLDivElement>(null);
@@ -324,12 +266,6 @@ export function ProyeccionPage({ initialVista = 'listados' }: ProyeccionPageProp
     );
   }
 
-  // Progreso de rotación en porcentaje (0% a 100%)
-  const rotationPercent = Math.max(
-    0,
-    Math.min(100, ((ROTATION_SECONDS - secondsRemaining) / ROTATION_SECONDS) * 100),
-  );
-
   return (
     <div
       ref={containerRef}
@@ -340,58 +276,24 @@ export function ProyeccionPage({ initialVista = 'listados' }: ProyeccionPageProp
     >
       {/* ─── ENCABEZADO MULTIFUNCIÓN DE PROYECCIÓN ─── */}
       <div className="relative overflow-hidden bg-app-surface border border-border rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 shadow-2xs flex items-center justify-between gap-3 flex-wrap">
-        {/* Barra superior de progreso de rotación automática (track visible + barra de progreso) */}
-        {shouldRotate && (
-          <div
-            key={activeTab}
-            className="absolute top-0 left-0 right-0 h-1 sm:h-1.5 bg-brand-primary/15 overflow-hidden"
-          >
-            <div
-              className={cn(
-                'h-full bg-brand-primary shadow-xs',
-                rotationPercent === 0
-                  ? 'transition-none'
-                  : 'transition-all duration-1000 ease-linear',
-              )}
-              style={{ width: `${rotationPercent}%` }}
-            />
-          </div>
-        )}
+        {/* Barra superior de rotación (deshabilitada en sistema de pieles) */}
 
         {/* Lado izquierdo: Selector de módulos de Proyección (Listados / Vales con texto e icono más grande y claro) */}
         <div className="flex items-center gap-2 flex-wrap pt-0.5">
           <div className="flex items-center gap-1.5 p-1 bg-app-surface-muted/90 rounded-xl border border-border/70">
             {canVerListados && (
-              <button
-                type="button"
-                onClick={() => handleSelectTab('listados')}
-                disabled={!hasListados}
-                className={cn(
-                  'flex items-center gap-2.5 px-3.5 py-2 rounded-lg text-sm sm:text-base font-black tracking-wide transition-all select-none',
-                  activeTab === 'listados'
-                    ? 'bg-app-surface text-brand-primary shadow-xs border-2 border-brand-primary/40 cursor-default'
-                    : !hasListados
-                      ? 'text-text-muted/40 bg-transparent border-transparent opacity-40 cursor-default pointer-events-none'
-                      : 'text-text-muted hover:text-text-primary hover:bg-app-surface/60 cursor-pointer',
-                )}
+              <div
+                className="flex items-center gap-2.5 px-3.5 py-2 rounded-lg text-sm sm:text-base font-black tracking-wide select-none bg-app-surface text-brand-primary shadow-xs border-2 border-brand-primary/40 cursor-default"
               >
                 <Icon name="format_list_bulleted" size="18px" />
-                <span>LISTADOS</span>
-                <span
-                  className={cn(
-                    'px-2 py-0.5 rounded-full text-xs sm:text-sm font-mono font-bold leading-tight',
-                    activeTab === 'listados'
-                      ? 'bg-brand-primary text-white'
-                      : !hasListados
-                        ? 'bg-cuadra-arena/40 text-text-muted/50 border border-border/30'
-                        : 'bg-cuadra-arena text-text-secondary border border-border/80',
-                  )}
-                >
+                <span>PROGRAMAS</span>
+                <span className="px-2 py-0.5 rounded-full text-xs sm:text-sm font-mono font-bold leading-tight bg-brand-primary text-white">
                   {itemsListadosPendientes.length}
                 </span>
-              </button>
+              </div>
             )}
 
+            {/* Vales temporalmente deshabilitados en proyección
             {canVerVales && (
               <button
                 type="button"
@@ -422,40 +324,17 @@ export function ProyeccionPage({ initialVista = 'listados' }: ProyeccionPageProp
                 </span>
               </button>
             )}
+            */}
           </div>
 
-          {/* Control de Rotación Automática (solo icono sin números ni textos) */}
+          {/* Control de Rotación Automática (comentado mientras Vales esté deshabilitado)
           {canVerListados && canVerVales && (
             <button
               type="button"
-              onClick={handleToggleAutoRotate}
-              disabled={!hasBothPendientes}
-              className={cn(
-                'h-9 w-9 flex items-center justify-center rounded-xl border transition-all select-none shadow-2xs',
-                !hasBothPendientes
-                  ? 'bg-app-surface text-text-muted/30 border-border/40 opacity-40 cursor-default pointer-events-none'
-                  : autoRotate
-                    ? 'bg-brand-primary/10 text-brand-primary border-brand-primary/30 hover:bg-brand-primary/20 cursor-pointer'
-                    : 'bg-app-surface text-text-muted border-border hover:text-text-primary hover:bg-cuadra-arena/40 cursor-pointer',
-              )}
-              title={
-                !hasAnyPendientes
-                  ? 'Sin pendientes de producción'
-                  : !hasBothPendientes
-                    ? 'Rotación en espera (solo una sección tiene pendientes)'
-                    : autoRotate
-                      ? 'Rotación activa (clic para pausar)'
-                      : 'Rotación pausada (clic para reanudar)'
-              }
-            >
-              <Icon
-                name={!autoRotate ? 'pause' : 'sync'}
-                size="18px"
-                className={shouldRotate ? 'animate-spin text-brand-primary' : 'text-text-muted/40'}
-                style={shouldRotate ? { animationDuration: '4s' } : undefined}
-              />
+              ...
             </button>
           )}
+          */}
         </div>
 
         {/* Lado derecho: Reloj digital discreto + Acciones de proyección */}
