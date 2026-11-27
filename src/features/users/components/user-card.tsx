@@ -5,7 +5,6 @@ import {
   UserStatusBadge,
   UserRoleBadge,
   UserSegmentacionBadge,
-  UserValesBadge,
 } from './user-status-badge';
 import type { UsuarioItem } from '../types/users.types';
 import { usePermissions } from '@/shared/hooks/use-permissions';
@@ -114,17 +113,6 @@ export function UserCard({
             )}
           </div>
         )}
-
-        <div className="flex items-center justify-between">
-          <span className="text-text-muted text-[10px] uppercase font-bold tracking-wider">
-            Vales
-          </span>
-          <UserValesBadge
-            areasVale={user.areasVale}
-            departamentosValeAsignados={user.departamentosValeAsignados}
-            rolCodigo={user.rol.codigo}
-          />
-        </div>
       </div>
 
       {/* Action Buttons */}

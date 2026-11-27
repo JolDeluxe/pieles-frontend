@@ -13,7 +13,6 @@ import {
   UserStatusBadge,
   UserRoleBadge,
   UserSegmentacionBadge,
-  UserValesBadge,
 } from '../components/user-status-badge';
 import { UserCard } from '../components/user-card';
 import { UserDetailModal } from '../components/user-detail-modal';
@@ -217,21 +216,6 @@ export function UsersPage(): ReactNode {
           </ul>
         );
       },
-    },
-    {
-      key: 'vales',
-      header: (
-        <span title="Áreas y departamentos operativos autorizados para Vales de Materia Prima">
-          Vales
-        </span>
-      ),
-      render: (row) => (
-        <UserValesBadge
-          areasVale={row.areasVale}
-          departamentosValeAsignados={row.departamentosValeAsignados}
-          rolCodigo={row.rol?.codigo}
-        />
-      ),
     },
     {
       key: 'estado',

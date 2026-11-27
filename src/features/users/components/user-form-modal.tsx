@@ -32,12 +32,6 @@ export interface UserFormModalProps {
   onSuccess: () => void;
 }
 
-const AREAS_VALE_OPTIONS: Array<{ id: AreaValeAuth; label: string }> = [
-  { id: 'BOTA', label: 'BOTA' },
-  { id: 'ACCESORIOS', label: 'ACCESORIOS' },
-  { id: 'OTRO', label: 'OTRO' },
-];
-
 /** Metadatos amigables para presentar permisos comprensibles al SUPER_ADMIN */
 const PERMISOS_INFO: Record<string, { nombre: string; descripcion: string; categoria: string }> = {
   // Vales de materia prima
@@ -190,7 +184,6 @@ const PERMISOS_INFO: Record<string, { nombre: string; descripcion: string; categ
 };
 
 const CATEGORIAS_ORDEN = [
-  'Vales de Materia Prima',
   'Listados de Producción',
   'Usuarios y Seguridad',
   'Catálogos y Sistema',
@@ -352,38 +345,6 @@ export function UserFormModal({
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
   };
-
-  const handleToggleAreaVale = (area: AreaValeAuth) => {
-    setAreasVale((prev) => {
-      const isSelecting = !prev.includes(area);
-      const nextAreas = isSelecting ? [...prev, area] : prev.filter((item) => item !== area);
-
-      // Si se está activando un área completa, limpiar los departamentos individuales de esa área
-      if (isSelecting) {
-        setDepartamentosValeIds((prevDeptos) =>
-          prevDeptos.filter((deptoId) => {
-            const depto = availableDepartamentosVale.find((d) => d.id === deptoId);
-            if (!depto) return true;
-            if (area === 'BOTA' && depto.areaFija === 'BOTA') return false;
-            if (area === 'ACCESORIOS' && depto.areaFija === 'ACCESORIOS') return false;
-            if (
-              area === 'OTRO' &&
-              (depto.areaFija === 'OTRO' ||
-                depto.requiereSeleccionArea ||
-                (!depto.areaFija && depto.areaFija !== 'BOTA' && depto.areaFija !== 'ACCESORIOS'))
-            ) {
-              return false;
-            }
-            return true;
-          }),
-        );
-      }
-
-      return nextAreas;
-    });
-  };
-
-
 
   const handleCyclePermisoExcepcion = (permiso: PermisoSimple, isBase: boolean) => {
     setExcepcionesMap((prev) => {
@@ -749,181 +710,6 @@ export function UserFormModal({
                   No hay líneas de producción configuradas en este departamento.
                 </p>
               )}
-            </div>
-          )}
-
-          {/* Autorización de Vales para ALMACENISTA */}
-          {isAlmacenista && (
-            <div className="space-y-3 p-3.5 bg-cuadra-arena/30 rounded-xl border border-border">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs font-semibold text-text-primary uppercase tracking-wider block">
-                  AUTORIZACIÓN DE VALES
-                </Label>
-                <span className="text-2xs font-mono text-text-muted shrink-0">
-                  {areasVale.length} área(s) · {departamentosValeIds.length} depto(s)
-                </span>
-              </div>
-
-              {/* 1. Áreas de Vales */}
-              <div className="space-y-1.5">
-                <span className="text-2xs font-semibold uppercase tracking-wider text-text-secondary block">
-                  Áreas
-                </span>
-                <div className="grid grid-cols-3 gap-2">
-                  {AREAS_VALE_OPTIONS.map((areaOpt) => {
-                    const isChecked = areasVale.includes(areaOpt.id);
-                    return (
-                      <label
-                        key={areaOpt.id}
-                        className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-colors ${
-                          isChecked
-                            ? 'bg-marca-primario/10 border-marca-primario/30 text-marca-primario font-medium'
-                            : 'bg-app-surface border-border text-text-secondary hover:bg-app-surface-muted'
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => handleToggleAreaVale(areaOpt.id)}
-                          className="rounded border-border text-marca-primario focus:ring-marca-primario/25 h-3.5 w-3.5 cursor-pointer"
-                        />
-                        <span>{areaOpt.label}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* 2. Departamentos Específicos: Selector Limpio + Chips */}
-              {availableDepartamentosVale.length > 0 && (() => {
-                const showBota = !areasVale.includes('BOTA');
-                const showAcc = !areasVale.includes('ACCESORIOS');
-                const showOtro = !areasVale.includes('OTRO');
-
-                // Si todas las áreas están seleccionadas, las áreas cubren todo
-                if (!showBota && !showAcc && !showOtro) {
-                  return (
-                    <p className="text-2xs text-text-muted italic pt-1 border-t border-border/50">
-                      Todas las áreas de vales seleccionadas (acceso total a departamentos).
-                    </p>
-                  );
-                }
-
-                // Deptos que aún pueden ser asignados individualmente
-                const eligibleDeptos = availableDepartamentosVale.filter((d) => {
-                  const isBota = d.areaFija === 'BOTA';
-                  const isAcc = d.areaFija === 'ACCESORIOS';
-                  const isOtro =
-                    d.areaFija === 'OTRO' ||
-                    d.requiereSeleccionArea ||
-                    (!d.areaFija && d.areaFija !== 'BOTA');
-                  if (isBota && !showBota) return false;
-                  if (isAcc && !showAcc) return false;
-                  if (isOtro && !showOtro) return false;
-                  return true;
-                });
-
-                const deptosBota = eligibleDeptos.filter((d) => d.areaFija === 'BOTA');
-                const deptosAccYOtros = eligibleDeptos.filter((d) => d.areaFija !== 'BOTA');
-
-                const selectedDeptos = availableDepartamentosVale.filter((d) =>
-                  departamentosValeIds.includes(d.id),
-                );
-
-                const handleSelectDepto = (e: React.ChangeEvent<HTMLSelectElement>) => {
-                  const val = Number(e.target.value);
-                  if (val && !departamentosValeIds.includes(val)) {
-                    setDepartamentosValeIds((prev) => [...prev, val]);
-                  }
-                  e.target.value = '';
-                };
-
-                const handleRemoveDepto = (id: number) => {
-                  setDepartamentosValeIds((prev) => prev.filter((dId) => dId !== id));
-                };
-
-                return (
-                  <div className="space-y-2 pt-2 border-t border-border/50">
-                    <div className="flex items-center justify-between">
-                      <span className="text-2xs font-semibold uppercase tracking-wider text-text-secondary block">
-                        Departamentos Específicos (Opcional)
-                      </span>
-                      {selectedDeptos.length > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => setDepartamentosValeIds([])}
-                          className="text-3xs text-danger hover:underline cursor-pointer"
-                        >
-                          Quitar todos ({selectedDeptos.length})
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Selector desplegable limpio */}
-                    <div className="relative">
-                      <select
-                        value=""
-                        onChange={handleSelectDepto}
-                        className="w-full h-9 px-3 text-xs bg-app-surface border border-border rounded-lg text-text-primary focus:outline-none focus:ring-1 focus:ring-marca-primario/30 cursor-pointer"
-                      >
-                        <option value="">+ Seleccionar departamento para autorizar...</option>
-                        {deptosBota.length > 0 && (
-                          <optgroup label="Área BOTA">
-                            {deptosBota.map((d) => (
-                              <option
-                                key={d.id}
-                                value={d.id}
-                                disabled={departamentosValeIds.includes(d.id)}
-                              >
-                                {departamentosValeIds.includes(d.id) ? '✓ ' : ''}{d.nombre}
-                              </option>
-                            ))}
-                          </optgroup>
-                        )}
-                        {deptosAccYOtros.length > 0 && (
-                          <optgroup label="Área ACCESORIOS / OTROS">
-                            {deptosAccYOtros.map((d) => (
-                              <option
-                                key={d.id}
-                                value={d.id}
-                                disabled={departamentosValeIds.includes(d.id)}
-                              >
-                                {departamentosValeIds.includes(d.id) ? '✓ ' : ''}{d.nombre}
-                              </option>
-                            ))}
-                          </optgroup>
-                        )}
-                      </select>
-                    </div>
-
-                    {/* Chips de departamentos seleccionados */}
-                    {selectedDeptos.length > 0 ? (
-                      <div className="flex flex-wrap gap-1.5 pt-0.5">
-                        {selectedDeptos.map((d) => (
-                          <span
-                            key={d.id}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-app-surface border border-border text-text-primary shadow-2xs"
-                          >
-                            <span>{d.nombre}</span>
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveDepto(d.id)}
-                              className="text-text-muted hover:text-danger text-xs font-bold leading-none cursor-pointer p-0.5"
-                              title={`Quitar ${d.nombre}`}
-                            >
-                              ✕
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-2xs text-text-muted italic">
-                        Sin departamentos individuales asignados (acceso regido por las áreas de arriba).
-                      </p>
-                    )}
-                  </div>
-                );
-              })()}
             </div>
           )}
 
