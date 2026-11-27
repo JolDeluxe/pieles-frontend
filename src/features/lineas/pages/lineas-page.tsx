@@ -1,5 +1,5 @@
 import { useState, useMemo, type ReactNode } from 'react';
-import { CuadraLoading } from '@/components/ui/cuadra-loading';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Icon } from '@/components/ui/icon';
@@ -381,8 +381,44 @@ export function LineasPage(): ReactNode {
 
       {/* Contenido principal: Tablero Dividido BOTA | ACCESORIOS */}
       {isLoading ? (
-        <div className="w-full p-12 flex flex-col items-center justify-center bg-app-surface rounded-xl border border-border">
-          <CuadraLoading size="md" />
+        <div className="bg-app-surface border border-border rounded-xl shadow-2xs overflow-hidden w-full">
+          <div className="w-full grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
+            {/* Lado Bota Skeleton */}
+            <div className="p-4 space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-border">
+                <Skeleton className="h-5 w-20" />
+                <Skeleton className="h-3 w-16" />
+              </div>
+              <div className="space-y-2.5 pt-1">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={`sk-lin-bota-${i}`} className="flex items-center justify-between gap-3 py-2 px-2 border-b border-border/40">
+                    <Skeleton className="h-4 w-6" />
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-6 w-12 rounded" />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Lado Accesorios Skeleton */}
+            <div className="p-4 space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-border">
+                <Skeleton className="h-5 w-28" />
+                <Skeleton className="h-3 w-16" />
+              </div>
+              <div className="space-y-2.5 pt-1">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={`sk-lin-acc-${i}`} className="flex items-center justify-between gap-3 py-2 px-2 border-b border-border/40">
+                    <Skeleton className="h-4 w-6" />
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-6 w-12 rounded" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       ) : (
         <div className="bg-app-surface border border-border rounded-xl shadow-2xs overflow-hidden w-full">
