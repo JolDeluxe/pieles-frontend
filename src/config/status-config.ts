@@ -81,8 +81,8 @@ export const ESTADO_FRENTE_CONFIG: Record<EstadoFrenteMaterial, StatusVisualConf
   },
   SEPARADO: {
     label: 'Entrega Afectada',
-    className: 'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20',
-    dot: 'bg-red-600',
+    className: 'bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20',
+    dot: 'bg-orange-600',
     icon: 'check',
   },
   ENTREGADO: {

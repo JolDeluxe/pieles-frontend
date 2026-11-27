@@ -413,12 +413,12 @@ export function ListadoDetailModal({
 
                     {/* Trazabilidad: 3 columnas optimizadas para que fecha y hora se lean completas sin cortarse */}
                     <div className="grid grid-cols-3 gap-1.5 sm:gap-2 py-2 px-2 sm:px-2.5 rounded-lg bg-app-surface-muted/60 border border-border/50 text-[11px]">
-                      {/* 1. ENTREGA AFECTADA (Rojo cuando es el estado actual) */}
+                      {/* 1. ENTREGA AFECTADA (Naranja cuando es el estado actual) */}
                       <div className="min-w-0 flex flex-col">
                         <span
                           className={`text-[9px] font-bold uppercase tracking-wider mb-0.5 ${
                             frente.estado === 'SEPARADO'
-                              ? 'text-rose-600 dark:text-rose-400'
+                              ? 'text-orange-600 dark:text-orange-400'
                               : 'text-text-muted'
                           }`}
                         >
@@ -437,7 +437,7 @@ export function ListadoDetailModal({
                               <span
                                 className={`text-[10px] leading-tight block ${
                                   frente.estado === 'SEPARADO'
-                                    ? 'font-bold text-rose-600 dark:text-rose-400'
+                                    ? 'font-bold text-orange-600 dark:text-orange-400'
                                     : 'font-semibold text-text-primary'
                                 }`}
                               >
@@ -447,7 +447,7 @@ export function ListadoDetailModal({
                                 <span
                                   className={`text-[9px] leading-tight block mt-0.5 ${
                                     frente.estado === 'SEPARADO'
-                                      ? 'text-rose-600/80 dark:text-rose-400/80'
+                                      ? 'text-orange-600/80 dark:text-orange-400/80'
                                       : 'text-text-muted'
                                   }`}
                                 >
@@ -458,7 +458,7 @@ export function ListadoDetailModal({
                                 <span
                                   className={`text-[9px] truncate block mt-0.5 ${
                                     frente.estado === 'SEPARADO'
-                                      ? 'text-rose-600/80 dark:text-rose-400/80'
+                                      ? 'text-orange-600/80 dark:text-orange-400/80'
                                       : 'text-text-muted'
                                   }`}
                                 >
@@ -613,7 +613,7 @@ export function ListadoDetailModal({
                                     setConfirmInlineAction(null);
                                     handleSepararFrente(frente.tipoFrente);
                                   }}
-                                  className="flex-1 text-xs h-8 inline-flex items-center justify-center gap-1 rounded-lg font-bold bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white shadow-xs transition-colors cursor-pointer"
+                                  className="flex-1 text-xs h-8 inline-flex items-center justify-center gap-1 rounded-lg font-bold bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white shadow-xs transition-colors cursor-pointer"
                                 >
                                   <Icon name="check" size="xs" />
                                   <span>¿Confirmar entrega afectada?</span>
@@ -636,7 +636,7 @@ export function ListadoDetailModal({
                                     accion: 'separar',
                                   })
                                 }
-                                className="w-full text-xs h-8 inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white shadow-xs transition-colors cursor-pointer"
+                                className="w-full text-xs h-8 inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white shadow-xs transition-colors cursor-pointer"
                               >
                                 <span>Entrega Afectada</span>
                                 <Icon name="arrow_forward" size="xs" />

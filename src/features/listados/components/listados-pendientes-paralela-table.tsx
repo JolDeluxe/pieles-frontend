@@ -68,9 +68,9 @@ interface ListadosParalelaTableProps {
 /**
  * Renderiza el progreso de cada programa / frente:
  * - PENDIENTE  → ⋯ (Pendiente)
- * - SEPARADO   → ✔️ Roja (Entrega Afectada)
- * - ENTREGADO  → ✔️ Roja + ✔️ Verde (Entrega Afectada + Regreso de Material)
- * - DESCONTADO → ✔️ Roja + ✔️ Verde + 2 palomitas moradas (Descontado en Sistema)
+ * - SEPARADO   → ✔️ Naranja (Entrega Afectada)
+ * - ENTREGADO  → ✔️ Naranja + ✔️ Verde (Entrega Afectada + Regreso de Material)
+ * - DESCONTADO → ✔️ Naranja + ✔️ Verde + 2 palomitas moradas (Descontado en Sistema)
  * - Sin frente → —
  */
 /**
@@ -138,7 +138,7 @@ function IndicadorProgresoFrente({
         className="inline-flex items-center justify-center gap-1.5 select-none"
         title={`${label ? `${label}: ` : ''}Entrega Afectada + Regreso de Material + Descontado de Sistema`}
       >
-        <Icon name="check" size="16px" weight={800} className="text-red-600 shrink-0" />
+        <Icon name="check" size="16px" weight={800} className="text-orange-500 shrink-0" />
         <Icon name="check" size="16px" weight={800} className="text-emerald-600 shrink-0" />
         <Icon name="done_all" size="18px" weight={800} className="text-purple-600 shrink-0" />
       </span>
@@ -151,7 +151,7 @@ function IndicadorProgresoFrente({
         className="inline-flex items-center justify-center gap-1.5 select-none"
         title={`${label ? `${label}: ` : ''}Entrega Afectada + Regreso de Material`}
       >
-        <Icon name="check" size="16px" weight={800} className="text-red-600 shrink-0" />
+        <Icon name="check" size="16px" weight={800} className="text-orange-500 shrink-0" />
         <Icon name="check" size="16px" weight={800} className="text-emerald-600 shrink-0" />
       </span>
     );
@@ -163,7 +163,7 @@ function IndicadorProgresoFrente({
         className="inline-flex items-center justify-center select-none"
         title={`${label ? `${label}: ` : ''}Entrega Afectada`}
       >
-        <Icon name="check" size="16px" weight={800} className="text-red-600 shrink-0" />
+        <Icon name="check" size="16px" weight={800} className="text-orange-500 shrink-0" />
       </span>
     );
   }
@@ -338,9 +338,9 @@ function MenuAccionesFila({
                       acciones.onSepararFrente(row, 'DIRECTOS');
                     }
                   }}
-                  className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-red-700 font-semibold hover:bg-red-500/10 text-left transition-colors cursor-pointer text-[13px] rounded-md"
+                  className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-orange-700 font-semibold hover:bg-orange-500/10 text-left transition-colors cursor-pointer text-[13px] rounded-md"
                 >
-                  <Icon name="check" size="sm" weight={800} className="text-red-600" />
+                  <Icon name="check" size="sm" weight={800} className="text-orange-500" />
                   <span>Entrega Afectada</span>
                 </button>
               )}
@@ -653,7 +653,7 @@ export function ListadosPendientesParalelaTable({
             <span className="text-text-secondary font-semibold">Pendiente</span>
           </span>
           <span className="flex items-center gap-1.5 font-medium">
-            <Icon name="check" size="16px" weight={800} className="text-red-600 shrink-0" />
+            <Icon name="check" size="16px" weight={800} className="text-orange-500 shrink-0" />
             <span className="text-text-secondary font-semibold">Entrega Afectada</span>
           </span>
           <span className="flex items-center gap-1.5 font-medium">

@@ -107,7 +107,7 @@ function IndicadorProgresoFrente({
         className="inline-flex items-center justify-center gap-1 select-none"
         title={`${label ? `${label}: ` : ''}Entrega Afectada + Regreso de Material + Descontado de Sistema`}
       >
-        <Icon name="check" size="14px" weight={800} className="text-red-600 shrink-0" />
+        <Icon name="check" size="14px" weight={800} className="text-orange-500 shrink-0" />
         <Icon name="check" size="14px" weight={800} className="text-emerald-600 shrink-0" />
         <Icon name="done_all" size="15px" weight={800} className="text-purple-600 shrink-0" />
       </span>
@@ -120,7 +120,7 @@ function IndicadorProgresoFrente({
         className="inline-flex items-center justify-center gap-1 select-none"
         title={`${label ? `${label}: ` : ''}Entrega Afectada + Regreso de Material`}
       >
-        <Icon name="check" size="14px" weight={800} className="text-red-600 shrink-0" />
+        <Icon name="check" size="14px" weight={800} className="text-orange-500 shrink-0" />
         <Icon name="check" size="14px" weight={800} className="text-emerald-600 shrink-0" />
       </span>
     );
@@ -132,7 +132,7 @@ function IndicadorProgresoFrente({
         className="inline-flex items-center justify-center select-none"
         title={`${label ? `${label}: ` : ''}Entrega Afectada`}
       >
-        <Icon name="check" size="14px" weight={800} className="text-red-600 shrink-0" />
+        <Icon name="check" size="14px" weight={800} className="text-orange-500 shrink-0" />
       </span>
     );
   }
@@ -506,7 +506,7 @@ export function ListadosAuditoriaParalelaTable({
             <span className="text-text-secondary">Pendiente</span>
           </span>
           <span className="flex items-center gap-1 font-medium">
-            <Icon name="check" size="14px" weight={800} className="text-red-600 shrink-0" />
+            <Icon name="check" size="14px" weight={800} className="text-orange-500 shrink-0" />
             <span className="text-text-secondary">Entrega Afectada</span>
           </span>
           <span className="flex items-center gap-1 font-medium">

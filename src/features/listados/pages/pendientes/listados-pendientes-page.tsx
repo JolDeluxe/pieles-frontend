@@ -257,7 +257,7 @@ export function ListadosPendientesPage(): ReactNode {
         } else {
           showFeedback(
             'success',
-            `Programa ${listado.numeroListado}: Entrega Afectada registrada (Palomita Roja).`,
+            `Programa ${listado.numeroListado}: Entrega Afectada registrada (Palomita Naranja).`,
           );
         }
       } else if (accion === 'entregar') {

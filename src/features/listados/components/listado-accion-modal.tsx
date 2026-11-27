@@ -86,12 +86,12 @@ export function ListadoAccionModal({
           {/* Pregunta explicativa */}
           {isSeparar ? (
             <div className="space-y-3">
-              <div className="flex items-start gap-2.5 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-text-primary">
-                <Icon name="check" size="sm" weight={800} className="text-red-600 shrink-0 mt-0.5" />
+              <div className="flex items-start gap-2.5 p-3 rounded-lg bg-orange-500/10 border border-orange-500/20 text-xs text-text-primary">
+                <Icon name="check" size="sm" weight={800} className="text-orange-500 shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-semibold text-red-700 dark:text-red-400">¿Registrar Entrega Afectada?</p>
+                  <p className="font-semibold text-orange-700 dark:text-orange-400">¿Registrar Entrega Afectada?</p>
                   <p className="text-text-secondary text-2xs mt-0.5">
-                    Se marcará la <strong>salida y entrega a producción</strong> (Palomita Roja) indicando que el material del programa ya fue entregado a producción.
+                    Se marcará la <strong>salida y entrega a producción</strong> (Palomita Naranja) indicando que el material del programa ya fue entregado a producción.
                   </p>
                 </div>
               </div>
@@ -149,10 +149,29 @@ export function ListadoAccionModal({
                 </>
               )}
             </button>
+          ) : isSeparar ? (
+            <button
+              type="button"
+              onClick={handleConfirm}
+              disabled={isSubmitting}
+              className="flex items-center gap-1.5 min-w-[120px] justify-center px-3 py-1.5 text-xs font-semibold rounded-lg bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white shadow-xs transition-colors cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
+            >
+              {isSubmitting ? (
+                <>
+                  <Spinner size="xs" />
+                  <span>Procesando...</span>
+                </>
+              ) : (
+                <>
+                  <Icon name="check" size="xs" />
+                  <span>Registrar Entrega Afectada</span>
+                </>
+              )}
+            </button>
           ) : (
             <Button
               type="button"
-              variant={isSeparar ? 'primary' : 'success'}
+              variant="success"
               size="sm"
               onClick={handleConfirm}
               disabled={isSubmitting}
