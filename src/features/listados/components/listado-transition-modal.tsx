@@ -206,7 +206,7 @@ export function ListadoTransitionModal({
                 {listado.numeroListado}
               </span>
             </div>
-            <span className="inline-flex items-center gap-1 font-bold text-xs px-2.5 py-1 rounded-full bg-cuadra-arena text-text-primary border border-border/60 shrink-0">
+            <span className="inline-flex items-center gap-1 font-bold text-xs px-2.5 py-1 rounded-md bg-cuadra-arena text-text-primary border border-border/60 shrink-0 whitespace-nowrap">
               <Icon name="tag" size="12px" />
               {listado.lineaProduccion.nombre.toUpperCase()}
             </span>

@@ -66,18 +66,18 @@ export function ListadoAccionModal({
       <div className="flex flex-col flex-1 overflow-hidden">
         <ModalBody className="space-y-4">
           {/* Card de información del programa y frente */}
-          <div className="p-3.5 rounded-xl bg-cuadra-arena/30 border border-border space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-2xs uppercase tracking-wider text-text-muted font-bold">
+          <div className="p-3.5 rounded-xl bg-cuadra-arena/30 border border-border space-y-1.5">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-2xs uppercase tracking-wider text-text-muted font-bold truncate">
                 Programa de Producción
               </span>
-              <span className="inline-flex items-center gap-1 font-bold text-xs px-2 py-0.5 rounded-full bg-cuadra-arena text-text-primary border border-border/60">
+              <span className="inline-flex items-center gap-1 font-bold text-xs px-2.5 py-0.5 rounded-md bg-cuadra-arena text-text-primary border border-border/60 shrink-0 whitespace-nowrap">
                 <Icon name="tag" size="12px" />
                 {listado.lineaProduccion.nombre.toUpperCase()}
               </span>
             </div>
             <div className="flex items-baseline justify-between gap-2">
-              <span className="font-mono font-black text-base text-text-primary tracking-wide">
+              <span className="font-mono font-black text-lg text-text-primary tracking-wide">
                 {listado.numeroListado}
               </span>
             </div>
