@@ -38,6 +38,7 @@ interface ListadosAuditoriaParalelaTableProps {
   selectedIndirectosIds?: number[];
   onToggleSelectDirectos?: (id: number) => void;
   onToggleSelectIndirectos?: (id: number) => void;
+  disableSemaforo?: boolean;
   pagination?: {
     currentPage: number;
     totalPages: number;
@@ -45,6 +46,36 @@ interface ListadosAuditoriaParalelaTableProps {
     itemsPerPage?: number;
     onPageChange: (page: number) => void;
   };
+}
+
+/**
+ * Calcula el estado del semáforo para un listado/programa:
+ * - 'ROJO': Fecha actual >= fechaRequerida + diasTolerancia (ej. 3 días) y no descontado.
+ * - 'AMARILLO': Fecha actual == (fechaRequerida + diasTolerancia - 1 día) (1 día antes del límite).
+ * - 'VERDE': A tiempo / dentro del plazo seguro.
+ */
+function calcularSemaforo(fechaRequeridaStr: string, diasTolerancia: number = 3): 'ROJO' | 'AMARILLO' | 'VERDE' {
+  if (!fechaRequeridaStr) return 'VERDE';
+  const solo = fechaRequeridaStr.includes('T') ? fechaRequeridaStr.slice(0, 10) : fechaRequeridaStr;
+  const [y, m, d] = solo.split('-').map(Number);
+  if (!y || !m || !d) return 'VERDE';
+
+  const fechaReq = new Date(y, m - 1, d);
+  fechaReq.setHours(0, 0, 0, 0);
+
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+
+  const diffTiempo = hoy.getTime() - fechaReq.getTime();
+  const diasTranscurridos = Math.floor(diffTiempo / (1000 * 60 * 60 * 24));
+
+  if (diasTranscurridos >= diasTolerancia) {
+    return 'ROJO';
+  }
+  if (diasTranscurridos === diasTolerancia - 1) {
+    return 'AMARILLO';
+  }
+  return 'VERDE';
 }
 
 /**
@@ -336,6 +367,7 @@ export function ListadosAuditoriaParalelaTable({
   selectedIndirectosIds = [],
   onToggleSelectDirectos,
   onToggleSelectIndirectos,
+  disableSemaforo = false,
   pagination,
 }: ListadosAuditoriaParalelaTableProps): ReactNode {
   // Ordenamiento independiente por Orden de Línea, Fecha y Número de Listado
@@ -540,6 +572,11 @@ export function ListadosAuditoriaParalelaTable({
                         (!descontandoFrente || descontandoFrente === tipoFrenteDir);
                       const isSelected = selectedDirectosIds.includes(dirItem.id);
 
+                      const semaforo =
+                        disableSemaforo || isDescontando || dir?.estado === 'DESCONTADO'
+                          ? 'VERDE'
+                          : calcularSemaforo(dirItem.fechaRequerida, dirItem.lineaProduccion.diasTolerancia ?? 3);
+
                       return (
                         <Fragment key={`dir-row-fragment-${dirItem.id}`}>
                           {isNewGroup && (
@@ -552,6 +589,10 @@ export function ListadosAuditoriaParalelaTable({
                             className={`transition-colors h-9 sm:h-10 md:h-11 ${
                               isDescontando
                                 ? 'animate-descontar-success'
+                                : semaforo === 'ROJO'
+                                ? 'bg-red-500/15 hover:bg-red-500/25 border-l-4 border-l-red-600'
+                                : semaforo === 'AMARILLO'
+                                ? 'bg-amber-500/15 hover:bg-amber-500/25 border-l-4 border-l-amber-500'
                                 : 'hover:bg-app-surface-muted/60 bg-app-surface'
                             } ${
                               !puedeOperar ? 'opacity-60' : ''
@@ -573,24 +614,59 @@ export function ListadosAuditoriaParalelaTable({
                             </td>
                             <td
                               title={dirItem.lineaProduccion.nombre.toUpperCase()}
-                              className="px-2 sm:px-2.5 truncate text-xs sm:text-[13px] md:text-sm py-1 sm:py-1.5 font-bold text-text-primary"
+                              className={`px-2 sm:px-2.5 truncate text-xs sm:text-[13px] md:text-sm py-1 sm:py-1.5 font-bold ${
+                                semaforo === 'ROJO'
+                                  ? 'text-red-900 dark:text-red-200'
+                                  : semaforo === 'AMARILLO'
+                                  ? 'text-amber-900 dark:text-amber-200'
+                                  : 'text-text-primary'
+                              }`}
                             >
                               {dirItem.lineaProduccion.nombre.toUpperCase()}
                             </td>
 
                             <td
                               title={dirItem.numeroListado}
-                              className={`px-2 sm:px-2.5 truncate font-mono font-bold text-text-primary text-xs sm:text-sm md:text-[15px] ${
+                              className={`px-2 sm:px-2.5 truncate font-mono font-bold text-xs sm:text-sm md:text-[15px] ${
+                                semaforo === 'ROJO'
+                                  ? 'text-red-950 dark:text-red-100 font-black'
+                                  : semaforo === 'AMARILLO'
+                                  ? 'text-amber-950 dark:text-amber-100 font-black'
+                                  : 'text-text-primary'
+                              } ${
                                 isNewGroup ? 'pt-1.5 pb-1 sm:pt-2 sm:pb-1.5' : 'py-1 sm:py-1.5'
                               }`}
                             >
                               {dirItem.numeroListado}
                             </td>
 
-                            <td className={`px-2 sm:px-2.5 text-right whitespace-nowrap text-text-secondary text-[11px] sm:text-xs md:text-[13px] font-medium ${
+                            <td className={`px-2 sm:px-2.5 text-right whitespace-nowrap text-[11px] sm:text-xs md:text-[13px] font-medium ${
                               isNewGroup ? 'pt-1.5 pb-1 sm:pt-2 sm:pb-1.5' : 'py-1 sm:py-1.5'
                             }`}>
-                              {formatFecha(dirItem.fechaRequerida)}
+                              <span
+                                className={`inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded-sm ${
+                                  semaforo === 'ROJO'
+                                    ? 'text-red-700 dark:text-red-300 font-black'
+                                    : semaforo === 'AMARILLO'
+                                    ? 'text-amber-700 dark:text-amber-300 font-black'
+                                    : 'text-text-secondary font-medium'
+                                }`}
+                                title={
+                                  semaforo === 'ROJO'
+                                    ? `Excedido de tolerancia (${dirItem.lineaProduccion.diasTolerancia ?? 3} días sin descontar)`
+                                    : semaforo === 'AMARILLO'
+                                    ? `Próximo al límite (1 día restante de tolerancia)`
+                                    : 'Dentro de fecha de tolerancia'
+                                }
+                              >
+                                {semaforo === 'ROJO' && (
+                                  <span className="w-2 h-2 rounded-full bg-red-600 shrink-0 shadow-xs animate-pulse" />
+                                )}
+                                {semaforo === 'AMARILLO' && (
+                                  <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0 shadow-xs" />
+                                )}
+                                {formatFecha(dirItem.fechaRequerida)}
+                              </span>
                             </td>
 
                             <td className="px-1 text-center whitespace-nowrap py-1 sm:py-1.5">
@@ -666,6 +742,11 @@ export function ListadosAuditoriaParalelaTable({
                         (!descontandoFrente || descontandoFrente === 'INDIRECTOS');
                       const isSelected = selectedIndirectosIds.includes(indItem.id);
 
+                      const semaforo =
+                        disableSemaforo || isDescontando || ind?.estado === 'DESCONTADO'
+                          ? 'VERDE'
+                          : calcularSemaforo(indItem.fechaRequerida, indItem.lineaProduccion.diasTolerancia ?? 3);
+
                       return (
                         <Fragment key={`ind-row-fragment-${indItem.id}`}>
                           {isNewGroup && (
@@ -678,6 +759,10 @@ export function ListadosAuditoriaParalelaTable({
                             className={`transition-colors h-9 sm:h-10 md:h-11 ${
                               isDescontando
                                 ? 'animate-descontar-success'
+                                : semaforo === 'ROJO'
+                                ? 'bg-red-500/15 hover:bg-red-500/25 border-l-4 border-l-red-600'
+                                : semaforo === 'AMARILLO'
+                                ? 'bg-amber-500/15 hover:bg-amber-500/25 border-l-4 border-l-amber-500'
                                 : 'hover:bg-app-surface-muted/60 bg-app-surface'
                             } ${
                               !puedeOperar ? 'opacity-60' : ''
@@ -699,24 +784,59 @@ export function ListadosAuditoriaParalelaTable({
                             </td>
                             <td
                               title={indItem.lineaProduccion.nombre.toUpperCase()}
-                              className="px-2 sm:px-2.5 truncate text-xs sm:text-[13px] md:text-sm py-1 sm:py-1.5 font-bold text-text-primary"
+                              className={`px-2 sm:px-2.5 truncate text-xs sm:text-[13px] md:text-sm py-1 sm:py-1.5 font-bold ${
+                                semaforo === 'ROJO'
+                                  ? 'text-red-900 dark:text-red-200'
+                                  : semaforo === 'AMARILLO'
+                                  ? 'text-amber-900 dark:text-amber-200'
+                                  : 'text-text-primary'
+                              }`}
                             >
                               {indItem.lineaProduccion.nombre.toUpperCase()}
                             </td>
 
                             <td
                               title={indItem.numeroListado}
-                              className={`px-2 sm:px-2.5 truncate font-mono font-bold text-text-primary text-xs sm:text-sm md:text-[15px] ${
+                              className={`px-2 sm:px-2.5 truncate font-mono font-bold text-xs sm:text-sm md:text-[15px] ${
+                                semaforo === 'ROJO'
+                                  ? 'text-red-950 dark:text-red-100 font-black'
+                                  : semaforo === 'AMARILLO'
+                                  ? 'text-amber-950 dark:text-amber-100 font-black'
+                                  : 'text-text-primary'
+                              } ${
                                 isNewGroup ? 'pt-1.5 pb-1 sm:pt-2 sm:pb-1.5' : 'py-1 sm:py-1.5'
                               }`}
                             >
                               {indItem.numeroListado}
                             </td>
 
-                            <td className={`px-2 sm:px-2.5 text-right whitespace-nowrap text-text-secondary text-[11px] sm:text-xs md:text-[13px] font-medium ${
+                            <td className={`px-2 sm:px-2.5 text-right whitespace-nowrap text-[11px] sm:text-xs md:text-[13px] font-medium ${
                               isNewGroup ? 'pt-1.5 pb-1 sm:pt-2 sm:pb-1.5' : 'py-1 sm:py-1.5'
                             }`}>
-                              {formatFecha(indItem.fechaRequerida)}
+                              <span
+                                className={`inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded-sm ${
+                                  semaforo === 'ROJO'
+                                    ? 'text-red-700 dark:text-red-300 font-black'
+                                    : semaforo === 'AMARILLO'
+                                    ? 'text-amber-700 dark:text-amber-300 font-black'
+                                    : 'text-text-secondary font-medium'
+                                }`}
+                                title={
+                                  semaforo === 'ROJO'
+                                    ? `Excedido de tolerancia (${indItem.lineaProduccion.diasTolerancia ?? 3} días sin descontar)`
+                                    : semaforo === 'AMARILLO'
+                                    ? `Próximo al límite (1 día restante de tolerancia)`
+                                    : 'Dentro de fecha de tolerancia'
+                                }
+                              >
+                                {semaforo === 'ROJO' && (
+                                  <span className="w-2 h-2 rounded-full bg-red-600 shrink-0 shadow-xs animate-pulse" />
+                                )}
+                                {semaforo === 'AMARILLO' && (
+                                  <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0 shadow-xs" />
+                                )}
+                                {formatFecha(indItem.fechaRequerida)}
+                              </span>
                             </td>
 
                             <td className="px-1 text-center whitespace-nowrap py-1 sm:py-1.5">
